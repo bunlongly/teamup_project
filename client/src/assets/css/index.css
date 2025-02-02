@@ -1,0 +1,3 @@
+/* ./assets/css/index.css */
+@import 'tailwindcss/preflight'; /* Replaces @tailwind base */
+@tailwind utilities; /* Replaces @tailwind components and @tailwind utilities */
