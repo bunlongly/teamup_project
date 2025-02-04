@@ -8,7 +8,7 @@ function App() {
         <nav className='p-4 bg-indigo-600 text-white'>
           <ul className='flex space-x-4'>
             <li>
-              <Link to='/' className='hover:text-indigo-200'>
+              <Link to='/' className='hover:text-indigo-200 text-black'>
                 Home
               </Link>
             </li>
