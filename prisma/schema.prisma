@@ -1,0 +1,95 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  PROJECT_MANAGER
+  FREELANCER
+}
+
+model User {
+  id          String     @id @default(uuid()) // Use UUID as the primary key
+  firstName   String
+  lastName    String
+  email       String     @unique
+  username String @unique
+  phoneNumber String     
+  role        Role       @default(FREELANCER) 
+  password    String
+  location    String?
+  imageUrl    String?
+  jobTitle    String?
+  bio         String?
+  description String?
+  
+  // Relationships
+  education   Education[]  // One-to-many relationship with Education
+  experience  Experience[]  // One-to-many relationship with Experience
+  userSkills  UserSkill[]   // One-to-many relationship with UserSkill (pivot table)
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Education {
+  id          String     @id @default(uuid()) // Use UUID as the primary key
+  degree      String
+  school      String
+  startYear   Int
+  endYear     Int?
+  description String?
+  imageUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Relationship
+  userId      String    // Foreign key to User (UUID)
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Experience {
+  id              String    @id @default(uuid()) // Use UUID as the primary key
+  position        String
+  employmentType  String
+  company         String
+  status          String
+  startDate       DateTime
+  endDate         DateTime?
+  description     String?
+  imageUrl        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relationship
+  userId          String    // Foreign key to User (UUID)
+  user            User      @relation(fields: [userId], references: [id])  // Foreign key to User
+}
+
+model Skill {
+  id          String    @id @default(uuid()) // Use UUID as the primary key
+  skillName   String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Many-to-many relationship with UserSkill (pivot table)
+  users       UserSkill[]  // Relationship with UserSkill table
+}
+
+model UserSkill {
+  userId    String   // Foreign key to User (UUID)
+  skillId   String   // Foreign key to Skill (UUID)
+  createdAt DateTime @default(now())
+
+  // Composite primary key (userId, skillId) to ensure unique pairs of users and skills
+  @@id([userId, skillId])
+
+  // Relations
+  user      User    @relation(fields: [userId], references: [id])
+  skill     Skill   @relation(fields: [skillId], references: [id])
+}

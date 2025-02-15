@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE `User` ADD COLUMN `bio` VARCHAR(191) NULL,
+    ADD COLUMN `description` VARCHAR(191) NULL,
+    ADD COLUMN `imageUrl` VARCHAR(191) NULL,
+    ADD COLUMN `jobTitle` VARCHAR(191) NULL,
+    ADD COLUMN `location` VARCHAR(191) NULL;
