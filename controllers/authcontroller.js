@@ -13,7 +13,7 @@ import {
 import {
   validateRegisterInput,
   validateLoginInput,
-} from "../middleware/validationMiddleware.js"; // Import validation middleware
+} from "../middleware/validationMiddleware.js";
 
 const prisma = new PrismaClient();
 

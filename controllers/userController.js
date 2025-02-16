@@ -58,3 +58,59 @@ export const getAllUsers = async (req, res, next) => {
     );
   }
 };
+
+// Utility function to validate UUID format
+const isValidUUID = (id) => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    id
+  );
+};
+
+export const getUserById = async (req, res, next) => {
+  const { id } = req.params;
+
+  // Validate UUID
+  if (!id || !isValidUUID(id)) {
+    return errorResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      "Invalid or missing user ID"
+    );
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        education: true,
+        experience: true,
+        userSkills: {
+          include: {
+            skill: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, "User not found");
+    }
+
+    // Remove password before returning the response
+    const { password, ...userWithoutPassword } = user;
+
+    return successResponse(
+      res,
+      `User retrieved successfully for username ${user.username}`,
+      user,
+      userWithoutPassword
+    );
+  } catch (error) {
+    console.error("Database error:", error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      "Error retrieving user"
+    );
+  }
+};
