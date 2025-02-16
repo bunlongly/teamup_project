@@ -66,23 +66,42 @@ export const validateLoginInput = withValidationErrors([
   body("password").notEmpty().withMessage("Password is required"),
 ]);
 
-// Validation for Updating User Information
-export const validateUpdateUserInput = withValidationErrors([
-  body("name").notEmpty().withMessage("Name is required"),
+// Validation for Profile Update
+export const validateUpdateUserProfile = withValidationErrors([
+  body("firstName").optional().notEmpty().withMessage("First name is required"),
+  body("lastName").optional().notEmpty().withMessage("Last name is required"),
   body("email")
-    .notEmpty()
-    .withMessage("Email is required")
+    .optional()
     .isEmail()
     .withMessage("Invalid email format")
     .custom(async (email, { req }) => {
-      const existingUser = await prisma.user.findUnique({
-        where: { email },
-      });
-      if (existingUser && existingUser.id !== req.user.userId) {
-        throw new BadRequestError("Email already exists");
+      if (email && email !== req.user.email) {
+        const existingEmail = await prisma.user.findUnique({
+          where: { email },
+        });
+        if (existingEmail) {
+          throw new BadRequestError("Email already exists");
+        }
       }
     }),
-  body("lastName").notEmpty().withMessage("Last name is required"),
+  body("username")
+    .optional()
+    .notEmpty()
+    .withMessage("Username is required")
+    .custom(async (username, { req }) => {
+      if (username && username !== req.user.username) {
+        const existingUsername = await prisma.user.findUnique({
+          where: { username },
+        });
+        if (existingUsername) {
+          throw new BadRequestError("Username already exists");
+        }
+      }
+    }),
+  body("phoneNumber")
+    .optional()
+    .notEmpty()
+    .withMessage("Phone number is required"),
 ]);
 
 // Custom Error Handler Middleware

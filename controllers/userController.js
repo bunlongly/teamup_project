@@ -114,3 +114,71 @@ export const getUserById = async (req, res, next) => {
     );
   }
 };
+
+export const updateUserProfile = async (req, res) => {
+  const { userId } = req.user;
+
+  const updateData = {};
+
+  // Only include fields that are provided in the request body
+  const allowedFields = [
+    "firstName",
+    "lastName",
+    "email",
+    "username",
+    "phoneNumber",
+    "location",
+    "imageUrl",
+    "jobTitle",
+    "bio",
+    "description",
+  ];
+
+  for (const field of allowedFields) {
+    if (req.body[field] !== undefined) {
+      updateData[field] = req.body[field];
+    }
+  }
+
+  try {
+    // Check if the user exists
+    const existingUser = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!existingUser) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, "User not found");
+    }
+
+    // Update the user with only the provided fields
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      include: {
+        education: true,
+        experience: true,
+        userSkills: {
+          include: {
+            skill: true,
+          },
+        },
+      },
+    });
+
+    // Remove the password field from the response
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return successResponse(
+      res,
+      "Profile updated successfully",
+      userWithoutPassword
+    );
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      "Error updating profile"
+    );
+  }
+};

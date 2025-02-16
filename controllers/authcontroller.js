@@ -21,9 +21,6 @@ const prisma = new PrismaClient();
 export const register = [
   validateRegisterInput,
   async (req, res, next) => {
-    console.log("Register route hit");
-    console.log("Request body:", req.body);
-
     const {
       firstName,
       lastName,
@@ -35,6 +32,7 @@ export const register = [
     } = req.body;
 
     try {
+      // Check if passwords match
       if (password !== confirmPassword) {
         return errorResponse(
           res,
@@ -47,8 +45,10 @@ export const register = [
       const isFirstAccount = (await prisma.user.count()) === 0;
       const role = isFirstAccount ? "ADMIN" : "FREELANCER";
 
+      // Hash the password before saving
       const hashedPassword = await hashPassword(password);
 
+      // Create user in the database
       const user = await prisma.user.create({
         data: {
           firstName,
@@ -61,14 +61,11 @@ export const register = [
         },
       });
 
+      // Only return the necessary user data, excluding the password
+      const { password: _, ...userWithoutPassword } = user;
+
       return createdResponse(res, "User registered successfully", {
-        userId: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        username: user.username,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        role,
+        user: userWithoutPassword,
       });
     } catch (error) {
       console.error(error);
