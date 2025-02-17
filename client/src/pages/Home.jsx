@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Khteamup from "../components/Khteamup";
 import Slogan from "../components/Slogan";
 import logo from "../assets/logo.png";
+import NavBar from '../components/NavBar';
 
 function HomePage() {
   const navigate = useNavigate();
