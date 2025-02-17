@@ -6,8 +6,8 @@
 
 /* style for right col */
 .right-col {
-    background: rgb(33,173,234);
-    background: radial-gradient(circle, rgba(33,173,234,1) 16%, #0046b0 76%);
+  background: rgb(33, 173, 234);
+  background: radial-gradient(circle, rgba(33, 173, 234, 1) 16%, #0046b0 76%);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -15,27 +15,27 @@
   height: 100vh;
 }
 .signup {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .newhere {
-    margin-top: 1rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-    color: white;
-  }
-  
-  .text {
-    margin-bottom: 1rem;
-    color: white;
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-.signup button{
-    background-color: #0046b0;
+.newhere {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.text {
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.signup button {
+  background-color: #0046b0;
 }
 /* style for left col */
 .left-col {
@@ -44,7 +44,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 100vh; 
+  height: 100vh;
 }
 
 .left-col .title-container {
@@ -68,23 +68,262 @@
 }
 
 .left-col .form-container form button {
-    text-align: center;
-    margin-bottom: 1rem; 
-  }
-  .left-col .form-container form .subtitle-container {
-    text-align: center;
-  }
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.left-col .form-container form .subtitle-container {
+  text-align: center;
+}
 
-  .left-col .form-container form input {
-    background-color: #F4F1F1;
-  }
+.left-col .form-container form input {
+  background-color: #f4f1f1;
+}
 
-  .left-col .signin button {
-    background-color: #0046b0;
-  }
+.left-col .signin button {
+  background-color: #0046b0;
+}
 
 /* style for main-container */
 .main-container {
   font-family: "Poppins", sans-serif;
 }
 
+/* style for createproject page */
+.create-project-page {
+  background-color: #f4f1f1;
+}
+.projects-left-col {
+  background-color: rgb(255, 255, 255);
+  border-radius: 20px;
+  border-style: solid;
+  margin-top: 1rem;
+}
+.projects-left-col form {
+  padding: 1rem;
+}
+.projects-left-col h3 {
+  padding-left: 1rem;
+  padding-top: 1rem;
+}
+
+.projects-left-col form label {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.projects-left-col form input {
+  margin-top: 0.7rem;
+  height: 3rem;
+}
+
+.projects-left-col form .sub-form {
+  border-radius: 1rem;
+  border-style: solid;
+  border-width: 1px;
+  border-color: rgba(128, 128, 128, 0.5);
+}
+
+.projects-right-col {
+  margin-top: 1rem;
+}
+
+.projects-right-col .details-header {
+  background-color: #0046b0;
+  border-radius: 0.7rem;
+  box-shadow: 0 10px 10px -5px rgba(0, 0, 0, 0.1); /* Add shadow to the bottom */
+}
+
+.projects-right-col .details-container {
+  border-radius: 0.7rem;
+  height: auto; /* Make the container height auto to fit content */
+  overflow-wrap: break-word; /* Ensure long words break and wrap within the container */
+  padding: 1rem; /* Add padding for better spacing */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* Add shadow to the bottom */
+}
+
+.project-detail p {
+  display: flex;
+  justify-content: space-between;
+}
+
+.project-description {
+  margin-right: 1rem;
+  white-space: pre-wrap;
+}
+
+/* style for projects */
+.projects-page {
+  background-color: #f4f1f1;
+}
+.projects-left-col {
+  background-color: rgb(255, 255, 255);
+  border-radius: 20px;
+  border-style: solid;
+  margin: 1rem;
+}
+
+.projects-page .projects-left-col .title-container {
+  margin-left: 1rem;
+}
+
+/* style for apply page */
+.apply-page {
+  background-color: #f4f1f1;
+}
+
+.apply-page .apply-left-col {
+  background-color: rgb(255, 255, 255);
+  border-radius: 20px;
+  border-style: solid;
+  margin: 1rem;
+}
+.apply-left-col .space {
+  background-color: #f4f1f1;
+}
+
+.apply-right-col .upper-right {
+  background-color: white;
+  border-radius: 1rem;
+}
+.apply-right-col .lower-right {
+  background-color: white;
+  border-radius: 1rem;
+}
+
+/* style for profile page */
+.profile-page-container {
+  background-color: #f4f1f1;
+}
+
+.profile-page {
+  padding: 1rem;
+}
+
+.profile-cover-photo {
+  position: relative;
+  cursor: pointer;
+}
+
+.profile-cover-photo img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px 8px 0 0;
+}
+
+.cover-photo-placeholder {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px 8px 0 0;
+  background-color: #e0e0e0;
+  color: #757575;
+}
+
+.profile-picture {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-picture img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-top: -75px;
+  border: 5px solid #fff;
+}
+
+.profile-picture-placeholder {
+  width: 150px;
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  color: #757575;
+  margin-top: -75px;
+  border: 5px solid #fff;
+}
+
+.profile-picture input,
+.profile-cover-photo input {
+  display: none;
+}
+
+.profile-portfolio-link,
+.profile-education-section,
+.profile-experience-section,
+.profile-skills-section {
+  margin: 20px 0;
+}
+
+.profile-education-item,
+.profile-experience-item,
+.profile-skill-item {
+  margin: 10px 0;
+}
+
+.profile-page input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.profile-page button {
+  background-color: #0046b0;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.profile-page button:hover {
+  background-color: #003399;
+}
+
+.profile-page-right {
+  background-color: #003399;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+}
+
+.edit-icon {
+  cursor: pointer;
+  color: #0046b0;
+  margin-left: 10px;
+}
+
+.delete-icon {
+  cursor: pointer;
+  color: #ff0000;
+  margin-left: 10px;
+}
+
+.profile-education-section, .profile-skills-section, .profile-experience-section {
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: white;
+}
+
+.update-profile-button {
+  text-align: center;
+  margin-top: 20px;
+}
