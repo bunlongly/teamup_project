@@ -227,8 +227,6 @@
   position: relative;
   cursor: pointer;
   display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .profile-picture img {
@@ -301,7 +299,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   font-weight: 700;
 }
 
@@ -317,7 +315,9 @@
   margin-left: 10px;
 }
 
-.profile-education-section, .profile-skills-section, .profile-experience-section {
+.profile-education-section,
+.profile-skills-section,
+.profile-experience-section {
   padding: 1rem;
   border-radius: 10px;
   background-color: white;
