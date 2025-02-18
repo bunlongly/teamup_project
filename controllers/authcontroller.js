@@ -82,7 +82,6 @@ export const register = [
 
 // Login route
 export const login = [
-  validateLoginInput,
   async (req, res, next) => {
     const { email, password } = req.body;
 
