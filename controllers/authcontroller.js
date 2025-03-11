@@ -10,16 +10,12 @@ import {
   createdResponse,
   errorResponse,
 } from "../utils/responseUtil.js";
-import {
-  validateRegisterInput,
-  validateLoginInput,
-} from "../middleware/validationMiddleware.js";
 
 const prisma = new PrismaClient();
 
 // Register route
 export const register = [
-  validateRegisterInput,
+
   async (req, res, next) => {
     const {
       firstName,
