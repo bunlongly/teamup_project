@@ -15,6 +15,37 @@ function ApplyPage() {
     location: projectLocation,
   } = location.state || {};
 
+  const handleApply = () => {
+    // Mock candidate profile data
+    const candidateProfile = {
+      name: "John Doe",
+      email: "john.doe@example.com",
+      skills: ["JavaScript", "React", "Node.js"],
+      experience: [
+        { title: "Software Developer", company: "ABC Corp" },
+        { title: "Frontend Developer", company: "XYZ Ltd" },
+      ],
+      education: [
+        { degree: "B.Sc. in Computer Science", school: "University of Example" },
+      ],
+      portfolioLink: "https://portfolio.example.com",
+    };
+
+    navigate("/candidates", {
+      state: {
+        role,
+        requirement,
+        projectname,
+        projecttype,
+        startdate,
+        enddate,
+        projectLocation,
+        description,
+        candidateProfile,
+      },
+    });
+  };
+
   return (
     <div className="apply-page">
       <div className="grid grid-cols-10 w-4/5 mx-auto main-container space-x-8">
@@ -47,7 +78,7 @@ function ApplyPage() {
               </div>
               <div className="mt-2 w-1/2">
                 <p className="mb-3">
-                  <strong>Location: </strong>
+                  <strong>Location: </strong> {projectLocation}
                 </p>
                 <p>
                   <strong>End Date: </strong>
@@ -59,7 +90,7 @@ function ApplyPage() {
               <button
                 style={{ backgroundColor: "#0046b0", color: "#fff" }}
                 type="button"
-                onClick={() => navigate("/apply/submit")}
+                onClick={handleApply}
                 className="rounded-md px-4 py-1.5 text-sm font-semibold text-black shadow-xs mt-4 mb-4"
               >
                 Apply

@@ -5,6 +5,7 @@ import NavBar from "./components/NavBar";
 import ProjectManagement from "./components/ProjectManagement";
 import ApplyJob from "./pages/ApplyPage";
 import Profile from "./pages/ProfilePage";
+import CandidatePage from "./pages/CandidatesPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/projects/*" element={<ProjectManagement />} />
           <Route path="/apply" element={<ApplyJob />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/candidates" element={<CandidatePage />} />
           
         </Routes>
       </div>

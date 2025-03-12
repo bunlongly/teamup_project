@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCamera, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
+  const navigate = useNavigate();
   const [profilePicture, setProfilePicture] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
   const [education, setEducation] = useState([]);
@@ -82,6 +84,18 @@ function Profile() {
       skills: false,
       portfolio: false,
     });
+  };
+
+  const handleApplyForJob = (jobDetails) => {
+    const candidateProfile = {
+      profilePicture,
+      coverPhoto,
+      education,
+      experience,
+      skills,
+      portfolioLink,
+    };
+    navigate("/candidates", { state: { ...jobDetails, candidateProfile } });
   };
 
   return (

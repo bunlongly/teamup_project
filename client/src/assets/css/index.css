@@ -327,3 +327,26 @@
   text-align: center;
   margin-top: 20px;
 }
+
+/* style for candidate page */
+.candidate-page {
+  background-color: #f4f1f1;
+}
+
+.candidate-left-col {
+  background-color: rgb(255, 255, 255);
+  border-radius: 20px;
+  border-style: solid;
+  margin: 1rem;
+}
+
+.candidate-right-col {
+  background-color: #003399;
+}
+
+.candidate-profile {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
