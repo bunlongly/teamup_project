@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import errorHandlerMiddleware from "./middleware/errorHandlerMiddleware.js";
+import upload from "./middleware/multerMiddleware.js";
+
 
 dotenv.config();
 
@@ -20,9 +22,10 @@ app.use((req, res, next) => {
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(upload.single("imageUrl"));
 app.use(cookieParser());
 app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }));
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
