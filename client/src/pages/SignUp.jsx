@@ -125,7 +125,7 @@ function SignUpPage() {
                 placeholder='First Name'
                 value={formData.firstName}
                 onChange={handleChange}
-                className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
               />
               {errors.firstName && (
                 <p className='text-red-500 text-sm'>{errors.firstName}</p>
@@ -145,7 +145,7 @@ function SignUpPage() {
                 placeholder='Last Name'
                 value={formData.lastName}
                 onChange={handleChange}
-                className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
               />
               {errors.lastName && (
                 <p className='text-red-500 text-sm'>{errors.lastName}</p>
@@ -165,7 +165,7 @@ function SignUpPage() {
                 placeholder='Username'
                 value={formData.username}
                 onChange={handleChange}
-                className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
               />
               {errors.username && (
                 <p className='text-red-500 text-sm'>{errors.username}</p>
@@ -186,7 +186,6 @@ function SignUpPage() {
                 id='phoneNumber'
                 name='phoneNumber'
                 placeholder='Enter phone number'
-                className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
               />
               {errors.phoneNumber && (
                 <p className='text-red-500 text-sm'>{errors.phoneNumber}</p>
@@ -206,7 +205,7 @@ function SignUpPage() {
                 placeholder='Email'
                 value={formData.email}
                 onChange={handleChange}
-                className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
               />
               {errors.email && (
                 <p className='text-red-500 text-sm'>{errors.email}</p>
@@ -227,7 +226,7 @@ function SignUpPage() {
                   placeholder='Password'
                   value={formData.password}
                   onChange={handleChange}
-                  className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                  className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
                 />
                 <button
                   type='button'
@@ -256,7 +255,7 @@ function SignUpPage() {
                   placeholder='Confirm Password'
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className='mt-1 block w-full rounded-md bg-white px-3 py-2 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600'
+                  className='mt-1 block w-full rounded-md bg-white px-4 py-3 text-base text-gray-900 outline-gray-300 placeholder:text-gray-400 focus:outline-blue-600 focus:ring-2 focus:ring-blue-500'
                 />
                 <button
                   type='button'
@@ -274,7 +273,7 @@ function SignUpPage() {
               <button
                 style={{ backgroundColor: '#0046b0' }}
                 type='submit'
-                className='rounded-md px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors'
+                className='rounded-md px-6 py-3 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors'
               >
                 Sign Up
               </button>
@@ -300,7 +299,7 @@ function SignUpPage() {
           <button
             type='button'
             onClick={() => navigate('/signin')}
-            className='rounded-md px-4 py-2 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors'
+            className='rounded-md px-6 py-3 text-sm font-semibold text-white shadow-xs hover:bg-blue-700 transition-colors'
             style={{ backgroundColor: '#0046b0' }}
           >
             Sign In
