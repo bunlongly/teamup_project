@@ -11,8 +11,8 @@ import Slogan from '../components/Slogan';
 function SignInPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: 'test001@gmail.com',
+    password: '123456789'
   });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -37,15 +37,32 @@ function SignInPage() {
         'http://localhost:5200/api/auth/login',
         formData
       );
+      console.log('Full Response:', response); // Log the entire response object
 
-      if (response.status === 200) {
-        toast.success('Login successful!', {
-          position: 'top-right',
-          autoClose: 2000
-        });
-        setTimeout(() => navigate('/dashboard'), 2000);
+      // Check status and response structure
+      console.log('Status:', response.status);
+      console.log('Response Data:', response.data);
+
+      if (response.status === 200 && response.data.success) {
+        // Check success flag
+        const token = response.data.data.token; // Access token correctly
+        console.log('Extracted Token:', token);
+
+        if (token) {
+          localStorage.setItem('token', token);
+          toast.success('Login successful!', {
+            position: 'top-right',
+            autoClose: 2000
+          });
+          setTimeout(() => navigate('/profile'), 2000);
+        } else {
+          throw new Error('No token received from server');
+        }
+      } else {
+        throw new Error(response.data.message || 'Login failed');
       }
     } catch (err) {
+      console.error('Error:', err); // Log the full error
       const errorResponse =
         err.response?.data?.message || 'Invalid credentials. Please try again.';
       setErrors({ email: errorResponse });
@@ -55,7 +72,7 @@ function SignInPage() {
       });
     }
   };
-
+  
   return (
     <div className='grid grid-cols-10 w-full main-container'>
       <div className='col-span-7 left-col'>
