@@ -8,8 +8,8 @@ import userRoutes from "./routes/userRoutes.js";
 import errorHandlerMiddleware from "./middleware/errorHandlerMiddleware.js";
 import upload from "./middleware/multerMiddleware.js";
 
-
 dotenv.config();
+
 
 const app = express();
 const prisma = new PrismaClient();
@@ -19,6 +19,12 @@ app.use((req, res, next) => {
   console.log(`Incoming Request: ${req.method} ${req.originalUrl}`);
   next();
 });
+
+// Middleware for CORS
+app.use(cors({
+  credentials: true,
+  origin: [process.env.CLIENT_URL]  
+}));
 
 // Middleware
 app.use(express.json());
