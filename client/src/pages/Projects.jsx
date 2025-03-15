@@ -23,13 +23,13 @@ function Projects({ projects }) {
 
   return (
     <div className="projects-page">
-      <div className="grid grid-cols-10 w-4/5 mx-auto main-container space-x-8">
-        <div className="col-span-7 projects-left-col">
+      <div className="grid grid-cols-1 lg:grid-cols-10 w-4/5 mx-auto main-container space-y-8 lg:space-y-0 lg:space-x-8">
+        <div className="col-span-1 lg:col-span-7 projects-left-col">
           {filteredProjects.map((project, index) => (
             <ProjectDetail key={index} project={project} />
           ))}
         </div>
-        <div className="col-span-3 projects-right-col">
+        <div className="col-span-1 lg:col-span-3 projects-right-col">
           <button
             style={{ backgroundColor: "#0046b0", color: "#fff" }}
             type="button"

@@ -8,8 +8,8 @@ function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-10 w-full main-container">
-      <div className="col-span-7 left-col">
+    <div className="grid grid-cols-1 md:grid-cols-10 w-full main-container">
+      <div className="col-span-1 md:col-span-7 left-col p-4">
         <div className="title-container">
           <h1 className="text-2xl font-bold mb-4">Sign In to Your Account</h1>
         </div>
@@ -58,7 +58,7 @@ function HomePage() {
           </form>
         </div>
       </div>
-      <div className="col-span-3 right-col">
+      <div className="col-span-1 md:col-span-3 right-col p-4">
         <div className="mb-4">
           <img src={logo} width={70} alt="Logo" />
         </div>

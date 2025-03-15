@@ -48,8 +48,8 @@ function ApplyPage() {
 
   return (
     <div className="apply-page">
-      <div className="grid grid-cols-10 w-4/5 mx-auto main-container space-x-8">
-        <div className="col-span-7 apply-left-col">
+      <div className="grid grid-cols-1 lg:grid-cols-10 w-4/5 mx-auto main-container space-y-8 lg:space-y-0 lg:space-x-8">
+        <div className="col-span-1 lg:col-span-7 apply-left-col">
           <div className="upper-left ml-4 mr-4">
             <div className="flex space-x-4">
               <div className="mt-2 w-1/2">
@@ -113,7 +113,7 @@ function ApplyPage() {
             </div>
           </div>
         </div>
-        <div className="col-span-3 apply-right-col">
+        <div className="col-span-1 lg:col-span-3 apply-right-col">
           <div className="upper-right ml-4 mr-4 mb-10 mt-4">
             Connection Request
           </div>
