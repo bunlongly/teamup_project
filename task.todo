@@ -1,0 +1,17 @@
+03.16
+
+To-Do Tasks:
+* Create separate update buttons for:
+    * Education
+    * Experience
+    * Skills
+* Add form validation and toast notifications on the frontend.
+* Integrate Cloudinary for uploading user images.
+* Update the "About" section on the profile page.
+* Refactor code by moving each section to its own file.
+
+
+
+
+
+* Complete post-project management tasks.

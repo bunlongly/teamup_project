@@ -7,7 +7,17 @@ import {
 import { errorResponse } from '../utils/responseUtil.js';
 
 export const authenticateUser = (req, res, next) => {
-  const token = req.cookies.token;
+  let token = req.cookies.token;
+
+  // If token isn't in cookies, check the Authorization header
+  if (
+    !token &&
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer ')
+  ) {
+    token = req.headers.authorization.split(' ')[1];
+  }
+
   if (!token) throw new UnauthenticatedError('Authentication required');
 
   try {
