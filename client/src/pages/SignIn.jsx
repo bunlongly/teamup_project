@@ -72,7 +72,7 @@ function SignInPage() {
       });
     }
   };
-  
+
   return (
     <div className='grid grid-cols-10 w-full main-container'>
       <div className='col-span-7 left-col'>
