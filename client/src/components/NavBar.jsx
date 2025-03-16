@@ -14,12 +14,12 @@ import axios from 'axios';
 import Khteamup from './Khteamup';
 import Slogan from './Slogan';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Add this import for toast styles
-import { useEffect, useState } from 'react'; // Import useEffect and useState
+import 'react-toastify/dist/ReactToastify.css'; 
+import { useEffect, useState } from 'react'; 
 
 function NavBar() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(localStorage.getItem('token')); // Use state to manage token
+  const [token, setToken] = useState(localStorage.getItem('token')); 
 
   // Effect to listen for changes in localStorage
   useEffect(() => {
@@ -57,7 +57,7 @@ function NavBar() {
         render: 'Successfully logged out!',
         type: 'success',
         isLoading: false,
-        autoClose: 2000, // Close after 2 seconds
+        autoClose: 2000, 
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true

@@ -1,15 +1,14 @@
-import multer from "multer";
-import DataParser from "datauri/parser.js";
-import path from "path";
+import multer from 'multer';
+import DataParser from 'datauri/parser.js';
+import path from 'path';
 
-// Setup multer to store files in memory
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// DataUri parser to convert buffer into base64 format
+// DataURI parser to convert a file buffer into a base64 string
 const parser = new DataParser();
 
-export const formatImage = (file) => {
+export const formatImage = file => {
   const fileExtension = path.extname(file.originalname).toString();
   return parser.format(fileExtension, file.buffer).content;
 };

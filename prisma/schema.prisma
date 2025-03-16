@@ -17,6 +17,7 @@ model User {
   id          String     @id @default(uuid()) // Use UUID as the primary key
   firstName   String
   lastName    String
+  dateOfBirth DateTime?
   email       String     @unique
   username String @unique
   phoneNumber String     
@@ -24,6 +25,7 @@ model User {
   password    String
   location    String?
   imageUrl    String?
+  coverImage String?
   jobTitle    String?
   bio         String?
   description String?

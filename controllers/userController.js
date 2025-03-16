@@ -2,49 +2,45 @@ import { successResponse, errorResponse } from '../utils/responseUtil.js';
 import { StatusCodes } from 'http-status-codes';
 import { PrismaClient } from '@prisma/client';
 import cloudinary from '../config/cloudinary.js';
-import fs from 'fs';
+// We no longer need fs because files are stored in memory
+import { formatImage } from '../middleware/multerMiddleware.js';
 
 const prisma = new PrismaClient();
 
-// Utility function to remove password field from user data
-const removePassword = users => {
-  return users.map(user => {
+// Remove password field from user objects
+const removePassword = users =>
+  users.map(user => {
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword;
   });
-};
 
-// Utility function to validate UUID format
-const isValidUUID = id => {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    id
-  );
-};
+// Validate UUID format
+const isValidUUID = id =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 
-// Upload Image to Cloudinary
-const uploadImageToCloudinary = async filePath => {
-  console.log('Uploading image to Cloudinary:', filePath);
+// Upload image to Cloudinary using a base64 string
+const uploadImageToCloudinary = async base64Image => {
+  console.log('Uploading image to Cloudinary');
   return new Promise((resolve, reject) => {
-    cloudinary.v2.uploader.upload(filePath, (error, result) => {
+    cloudinary.uploader.upload(base64Image, (error, result) => {
       if (error) {
         console.error('Cloudinary upload error:', error);
         reject(error);
       } else {
         console.log('Cloudinary upload result:', result);
         resolve({
-          secure_url: result.secure_url,
-          public_id: result.public_id
+          secure_url: result.secure_url
         });
       }
     });
   });
 };
 
-// DELETE Image from Cloudinary
+// Delete image from Cloudinary (if needed)
 const deleteImageFromCloudinary = async publicId => {
   console.log('Deleting image from Cloudinary:', publicId);
   return new Promise((resolve, reject) => {
-    cloudinary.v2.uploader.destroy(publicId, (error, result) => {
+    cloudinary.uploader.destroy(publicId, (error, result) => {
       if (error) {
         console.error('Cloudinary delete error:', error);
         reject(error);
@@ -59,7 +55,6 @@ const deleteImageFromCloudinary = async publicId => {
 // GET ALL USERS
 export const getAllUsers = async (req, res, next) => {
   const { page = 1, pageSize = 10 } = req.query;
-
   try {
     const users = await prisma.user.findMany({
       skip: (page - 1) * pageSize,
@@ -67,24 +62,15 @@ export const getAllUsers = async (req, res, next) => {
       include: {
         education: true,
         experience: true,
-        userSkills: {
-          include: {
-            skill: true
-          }
-        }
+        userSkills: { include: { skill: true } }
       }
     });
-
     const totalUsers = await prisma.user.count();
-
     if (users.length === 0) {
       return errorResponse(res, StatusCodes.NOT_FOUND, 'No users found');
     }
-
-    // Remove the password field before returning the response
     const usersWithoutPassword = removePassword(users);
     const totalPages = Math.ceil(totalUsers / pageSize);
-
     return successResponse(res, 'Users retrieved successfully', {
       pagination: {
         currentPage: parseInt(page),
@@ -107,8 +93,6 @@ export const getAllUsers = async (req, res, next) => {
 // GET USER BY ID
 export const getUserById = async (req, res, next) => {
   const { id } = req.params;
-
-  // Validate UUID
   if (!id || !isValidUUID(id)) {
     return errorResponse(
       res,
@@ -116,28 +100,19 @@ export const getUserById = async (req, res, next) => {
       'Invalid or missing user ID'
     );
   }
-
   try {
     const user = await prisma.user.findUnique({
       where: { id },
       include: {
         education: true,
         experience: true,
-        userSkills: {
-          include: {
-            skill: true
-          }
-        }
+        userSkills: { include: { skill: true } }
       }
     });
-
     if (!user) {
       return errorResponse(res, StatusCodes.NOT_FOUND, 'User not found');
     }
-
-    // Remove password before returning the response
     const { password, ...userWithoutPassword } = user;
-
     return successResponse(
       res,
       `User retrieved successfully for username ${user.username}`,
@@ -152,58 +127,73 @@ export const getUserById = async (req, res, next) => {
     );
   }
 };
+
 // UPDATE USER PROFILE (with Cloudinary image upload and relations update)
 export const updateUserProfile = async (req, res) => {
   const { userId } = req.user;
   console.log('Updating profile for user ID:', userId);
   console.log('Request body:', req.body);
-  console.log('Request file:', req.file);
+  console.log('Request files:', req.files);
 
-  // Extract relation fields separately and remove them from the main update
-  const { education, experience, skills, ...otherFields } = req.body;
+  // Extract relation fields and other fields from the request body
+  const { education, experience, skills, dateOfBirth, ...otherFields } =
+    req.body;
   const updateData = { ...otherFields };
 
+  // If dateOfBirth is provided, convert it to a Date object
+  if (dateOfBirth) {
+    updateData.dateOfBirth = new Date(dateOfBirth);
+  }
+
   try {
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({
       where: { id: userId }
     });
-
     if (!existingUser) {
       return errorResponse(res, StatusCodes.NOT_FOUND, 'User not found');
     }
 
-    // Handle Profile Image Upload if file exists
-    if (req.file) {
+    // Handle Profile Image Upload (from memory, field "imageUrl")
+    if (req.files && req.files.imageUrl && req.files.imageUrl.length > 0) {
       try {
-        const { secure_url, public_id } = await uploadImageToCloudinary(
-          req.file.path
-        );
+        const file = req.files.imageUrl[0];
+        const base64Image = formatImage(file);
+        const { secure_url } = await uploadImageToCloudinary(base64Image);
         updateData.imageUrl = secure_url;
-        updateData.imagePublicId = public_id;
-        fs.unlinkSync(req.file.path);
-
-        // Delete old image from Cloudinary if exists
-        if (existingUser.imagePublicId) {
-          await deleteImageFromCloudinary(existingUser.imagePublicId);
-        }
       } catch (err) {
-        console.error('Error uploading image to Cloudinary:', err);
+        console.error('Error uploading profile image:', err);
         return errorResponse(
           res,
           StatusCodes.INTERNAL_SERVER_ERROR,
-          'Error uploading image'
+          'Error uploading profile image'
         );
       }
     }
 
-    // Update main user record (excluding relation fields)
+    // Handle Cover Photo Upload (from memory, field "coverImage")
+    if (req.files && req.files.coverImage && req.files.coverImage.length > 0) {
+      try {
+        const file = req.files.coverImage[0];
+        const base64Cover = formatImage(file);
+        const { secure_url } = await uploadImageToCloudinary(base64Cover);
+        updateData.coverImage = secure_url;
+      } catch (err) {
+        console.error('Error uploading cover photo:', err);
+        return errorResponse(
+          res,
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          'Error uploading cover photo'
+        );
+      }
+    }
+
+    // Update the main user record (excluding relational fields)
     await prisma.user.update({
       where: { id: userId },
       data: updateData
     });
 
-    // Update Education: delete existing education records and re-create
+    // Update Education: Delete existing and re-create records
     if (education !== undefined) {
       const educationData = JSON.parse(education);
       await prisma.education.deleteMany({ where: { userId } });
@@ -212,7 +202,6 @@ export const updateUserProfile = async (req, res) => {
           data: {
             school: edu.school,
             degree: edu.degree,
-            // Convert startYear and endYear to numbers
             startYear: parseInt(edu.startYear),
             endYear: edu.endYear ? parseInt(edu.endYear) : null,
             userId
@@ -221,12 +210,11 @@ export const updateUserProfile = async (req, res) => {
       }
     }
 
-    // Update Experience: delete existing experience records and re-create
+    // Update Experience: Delete existing and re-create records
     if (experience !== undefined) {
       const experienceData = JSON.parse(experience);
       await prisma.experience.deleteMany({ where: { userId } });
       for (const exp of experienceData) {
-        // Convert year string to Date object (assuming January 1st)
         const startDate = new Date(`${exp.startYear}-01-01`);
         const endDate =
           exp.endYear && exp.endYear.toLowerCase() !== 'present'
@@ -234,9 +222,7 @@ export const updateUserProfile = async (req, res) => {
             : null;
         await prisma.experience.create({
           data: {
-            // Map "title" from the client to the required "position" field.
-            position: exp.title,
-            // Provide default values for required fields not provided by client.
+            position: exp.title, // Map "title" from the client to "position"
             employmentType: exp.employmentType || '',
             status: exp.status || 'Active',
             company: exp.company,
@@ -250,25 +236,18 @@ export const updateUserProfile = async (req, res) => {
       }
     }
 
-    // Update Skills: assuming skills is a list of skill names,
-    // and that you use a join table (UserSkill) with a Skill model.
+    // Update Skills: Delete existing join records and re-create them
     if (skills !== undefined) {
       const skillsData = JSON.parse(skills);
-      // Delete existing user skills
       await prisma.userSkill.deleteMany({ where: { userId } });
       for (const skillName of skillsData) {
-        // Upsert the skill (create if not exists) based on the unique field (skillName)
         const skill = await prisma.skill.upsert({
           where: { skillName },
           update: {},
           create: { skillName }
         });
-        // Create the relation record in the join table
         await prisma.userSkill.create({
-          data: {
-            userId,
-            skillId: skill.id
-          }
+          data: { userId, skillId: skill.id }
         });
       }
     }
@@ -279,12 +258,9 @@ export const updateUserProfile = async (req, res) => {
       include: {
         education: true,
         experience: true,
-        userSkills: {
-          include: { skill: true }
-        }
+        userSkills: { include: { skill: true } }
       }
     });
-
     const { password, ...userWithoutPassword } = finalUser;
     return successResponse(
       res,

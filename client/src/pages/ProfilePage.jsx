@@ -1,33 +1,53 @@
-import { useState, useEffect } from 'react'; // Import useEffect
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 
+import PersonalInfoSection from './PersonalInfoSection.jsx';
+import EducationSection from './EducationSection.jsx';
+import ExperienceSection from './ExperienceSection.jsx';
+import SkillsSection from './SkillsSection.jsx';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCamera, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faCamera } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
   const navigate = useNavigate();
 
-  // States for image previews and file objects
+  // States for images
   const [profilePicture, setProfilePicture] = useState(null);
   const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [coverPhoto, setCoverPhoto] = useState(null);
   const [coverPhotoFile, setCoverPhotoFile] = useState(null);
 
-  // Other state variables
+  // States for relation data
   const [education, setEducation] = useState([]);
   const [experience, setExperience] = useState([]);
   const [skills, setSkills] = useState([]);
 
-  const [editMode, setEditMode] = useState({
-    education: false,
-    experience: false,
-    skills: false,
-    portfolio: false
+  // State for personal info (from User model)
+  const [personalInfo, setPersonalInfo] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    username: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    location: '',
+    jobTitle: '',
+    bio: '',
+    description: ''
   });
 
-  // Fetch user data on component mount
+  // Edit mode state for each section
+  const [editMode, setEditMode] = useState({
+    personal: false,
+    education: false,
+    experience: false,
+    skills: false
+  });
+
+  // On mount, fetch profile data
   useEffect(() => {
     const fetchUserData = async () => {
       const token = localStorage.getItem('token');
@@ -36,7 +56,6 @@ function Profile() {
         navigate('/login');
         return;
       }
-
       let userId = localStorage.getItem('userId');
       if (!userId) {
         try {
@@ -49,30 +68,33 @@ function Profile() {
           return;
         }
       }
-
       try {
-        // Fetch user profile data
         const response = await axios.get(
           `http://localhost:5200/api/user/${userId}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
-
         const userData = response.data.data;
-
-        // Set education
-        if (userData.education) {
-          setEducation(userData.education);
-        }
-
-        // Set experience (transform if necessary)
+        // Set personal info fields
+        setPersonalInfo({
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+          username: userData.username,
+          phoneNumber: userData.phoneNumber,
+          dateOfBirth: userData.dateOfBirth,
+          location: userData.location,
+          jobTitle: userData.jobTitle,
+          bio: userData.bio,
+          description: userData.description
+        });
+        // Set education, experience, and skills
+        if (userData.education) setEducation(userData.education);
         if (userData.experience) {
           const transformedExperience = userData.experience.map(exp => ({
             company: exp.company,
-            title: exp.position, // Map "position" to "title"
+            title: exp.position,
             startYear: new Date(exp.startDate).getFullYear().toString(),
             endYear: exp.endDate
               ? new Date(exp.endDate).getFullYear().toString()
@@ -80,31 +102,23 @@ function Profile() {
           }));
           setExperience(transformedExperience);
         }
-
-        // Set skills (transform if necessary)
         if (userData.userSkills) {
           const transformedSkills = userData.userSkills.map(
             us => us.skill.skillName
           );
           setSkills(transformedSkills);
         }
-
-        // Set profile picture and cover photo if available
-        if (userData.profilePicture) {
-          setProfilePicture(userData.profilePicture);
-        }
-        if (userData.coverPhoto) {
-          setCoverPhoto(userData.coverPhoto);
-        }
+        // Set images (assume API returns fields "imageUrl" and "coverImage")
+        if (userData.imageUrl) setProfilePicture(userData.imageUrl);
+        if (userData.coverImage) setCoverPhoto(userData.coverImage);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       }
     };
-
     fetchUserData();
-  }, [navigate]); // Add navigate to dependency array
+  }, [navigate]);
 
-  // Handlers for file changes – store both preview URL and file object
+  // File change handlers
   const handleProfilePictureChange = e => {
     const file = e.target.files[0];
     if (file) {
@@ -121,71 +135,15 @@ function Profile() {
     }
   };
 
-  // Handlers for adding new items
-  const handleAddEducation = () => {
-    setEducation([
-      ...education,
-      { school: '', degree: '', startYear: '', endYear: '' }
-    ]);
-  };
-
-  const handleAddExperience = () => {
-    setExperience([
-      ...experience,
-      { company: '', title: '', startYear: '', endYear: '' }
-    ]);
-  };
-
-  const handleAddSkill = () => {
-    setSkills([...skills, '']);
-  };
-
-  // Handlers for updating items
-  const handleEducationChange = (index, field, value) => {
-    const newEducation = [...education];
-    newEducation[index][field] = value;
-    setEducation(newEducation);
-  };
-
-  const handleExperienceChange = (index, field, value) => {
-    const newExperience = [...experience];
-    newExperience[index][field] = value;
-    setExperience(newExperience);
-  };
-
-  const handleSkillChange = (index, value) => {
-    const newSkills = [...skills];
-    newSkills[index] = value;
-    setSkills(newSkills);
-  };
-
-  // Handlers for deleting items
-  const handleDeleteEducation = index => {
-    setEducation(education.filter((_, i) => i !== index));
-  };
-
-  const handleDeleteExperience = index => {
-    setExperience(experience.filter((_, i) => i !== index));
-  };
-
-  const handleDeleteSkill = index => {
-    setSkills(skills.filter((_, i) => i !== index));
-  };
-
-  // Handler for updating the profile
+  // Global update profile handler
   const handleUpdateProfile = async () => {
     console.log('Update button clicked.');
-
-    // Retrieve token from localStorage
     const token = localStorage.getItem('token');
-    console.log('Token:', token);
     if (!token) {
       console.error('Token is missing. Please log in.');
       navigate('/login');
       return;
     }
-
-    // Decode the token to extract the userId if not already stored
     let userId = localStorage.getItem('userId');
     if (!userId) {
       try {
@@ -200,51 +158,60 @@ function Profile() {
     }
     console.log('User ID:', userId);
 
-    // Transform the experience array to include the required "position" field.
+    // Transform experience to include required "position" field
     const transformedExperience = experience.map(exp => ({
       ...exp,
-      position: exp.title // Map "title" to "position"
+      position: exp.title
     }));
 
-    // Create FormData to combine text fields and file uploads
+    // Create FormData and append all fields and files
     const formData = new FormData();
+    formData.append('firstName', personalInfo.firstName);
+    formData.append('lastName', personalInfo.lastName);
+    formData.append('email', personalInfo.email);
+    formData.append('username', personalInfo.username);
+    formData.append('phoneNumber', personalInfo.phoneNumber);
+    formData.append('dateOfBirth', personalInfo.dateOfBirth);
+    formData.append('location', personalInfo.location);
+    formData.append('jobTitle', personalInfo.jobTitle);
+    formData.append('bio', personalInfo.bio);
+    formData.append('description', personalInfo.description);
     formData.append('education', JSON.stringify(education));
     formData.append('experience', JSON.stringify(transformedExperience));
     formData.append('skills', JSON.stringify(skills));
-
-    // Append files if available
     if (profilePictureFile) {
-      formData.append('image', profilePictureFile);
+      formData.append('imageUrl', profilePictureFile);
     }
     if (coverPhotoFile) {
       formData.append('coverImage', coverPhotoFile);
     }
 
     try {
-      // Send PUT request to update the profile
       const response = await axios.put(
         `http://localhost:5200/api/user/${userId}/edit`,
         formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            Authorization: `Bearer ${token}`
-          }
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log('Profile updated:', response.data);
-
-      // Assuming your API returns the updated user data in response.data.data,
-      // update your state to reflect the real data.
       const updatedUser = response.data.data;
-
-      // Update local state with the real data from the backend.
+      // Update state with returned data
+      setPersonalInfo({
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        phoneNumber: updatedUser.phoneNumber,
+        dateOfBirth: updatedUser.dateOfBirth,
+        location: updatedUser.location,
+        jobTitle: updatedUser.jobTitle,
+        bio: updatedUser.bio,
+        description: updatedUser.description
+      });
       if (updatedUser.education) setEducation(updatedUser.education);
       if (updatedUser.experience) {
-        // Map backend experience (if necessary) to match your local format.
         const mappedExp = updatedUser.experience.map(exp => ({
           company: exp.company,
-          title: exp.position, // map "position" to "title"
+          title: exp.position,
           startYear: new Date(exp.startDate).getFullYear().toString(),
           endYear: exp.endDate
             ? new Date(exp.endDate).getFullYear().toString()
@@ -253,21 +220,18 @@ function Profile() {
         setExperience(mappedExp);
       }
       if (updatedUser.userSkills) {
-        // Assuming updatedUser.userSkills is an array of objects containing a "skill" property.
         const mappedSkills = updatedUser.userSkills.map(
           us => us.skill.skillName
         );
         setSkills(mappedSkills);
       }
-
+      // Turn off edit mode for all sections
       setEditMode({
+        personal: false,
         education: false,
         experience: false,
-        skills: false,
-        portfolio: false
+        skills: false
       });
-      // Optionally navigate to a different page or keep the user on the same page.
-      // navigate(`/profile/${userId}`);
     } catch (error) {
       console.error('Failed to update profile:', error);
     }
@@ -276,6 +240,7 @@ function Profile() {
   return (
     <div className='grid grid-cols-10 w-full mx-auto space-x-8 profile-page-container'>
       <div className='col-span-7 profile-page'>
+        {/* Cover Photo */}
         <div
           className='profile-cover-photo'
           onClick={() => document.getElementById('coverPhotoInput').click()}
@@ -290,11 +255,12 @@ function Profile() {
           )}
           <input
             type='file'
-            onChange={handleCoverPhotoChange}
-            style={{ display: 'none' }}
             id='coverPhotoInput'
+            style={{ display: 'none' }}
+            onChange={handleCoverPhotoChange}
           />
         </div>
+        {/* Profile Picture */}
         <div
           className='profile-picture'
           onClick={() => document.getElementById('profilePictureInput').click()}
@@ -309,182 +275,47 @@ function Profile() {
           )}
           <input
             type='file'
-            onChange={handleProfilePictureChange}
-            style={{ display: 'none' }}
             id='profilePictureInput'
+            style={{ display: 'none' }}
+            onChange={handleProfilePictureChange}
           />
         </div>
-        <div className='profile-education-section'>
-          <div className='section-header'>
-            <h3>Education</h3>
-            <FontAwesomeIcon
-              icon={faPen}
-              onClick={() =>
-                setEditMode({ ...editMode, education: !editMode.education })
-              }
-              className='edit-icon'
-            />
-          </div>
-          {education.map((edu, index) => (
-            <div key={index} className='profile-education-item'>
-              {editMode.education ? (
-                <>
-                  <input
-                    type='text'
-                    placeholder='School'
-                    value={edu.school}
-                    onChange={e =>
-                      handleEducationChange(index, 'school', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='Degree'
-                    value={edu.degree}
-                    onChange={e =>
-                      handleEducationChange(index, 'degree', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='Start Year'
-                    value={edu.startYear}
-                    onChange={e =>
-                      handleEducationChange(index, 'startYear', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='End Year'
-                    value={edu.endYear}
-                    onChange={e =>
-                      handleEducationChange(index, 'endYear', e.target.value)
-                    }
-                  />
-                  <FontAwesomeIcon
-                    icon={faTrash}
-                    onClick={() => handleDeleteEducation(index)}
-                    className='delete-icon'
-                  />
-                </>
-              ) : (
-                <div>
-                  <p>School: {edu.school}</p>
-                  <p>Degree: {edu.degree}</p>
-                  <p>Start Year: {edu.startYear}</p>
-                  <p>End Year: {edu.endYear}</p>
-                </div>
-              )}
-            </div>
-          ))}
-          {editMode.education && (
-            <button onClick={handleAddEducation}>Add Education</button>
-          )}
-        </div>
-        <div className='profile-experience-section'>
-          <div className='section-header'>
-            <h3>Experience</h3>
-            <FontAwesomeIcon
-              icon={faPen}
-              onClick={() =>
-                setEditMode({ ...editMode, experience: !editMode.experience })
-              }
-              className='edit-icon'
-            />
-          </div>
-          {experience.map((exp, index) => (
-            <div key={index} className='profile-experience-item'>
-              {editMode.experience ? (
-                <>
-                  <input
-                    type='text'
-                    placeholder='Company'
-                    value={exp.company}
-                    onChange={e =>
-                      handleExperienceChange(index, 'company', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='Title'
-                    value={exp.title}
-                    onChange={e =>
-                      handleExperienceChange(index, 'title', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='Start Year'
-                    value={exp.startYear}
-                    onChange={e =>
-                      handleExperienceChange(index, 'startYear', e.target.value)
-                    }
-                  />
-                  <input
-                    type='text'
-                    placeholder='End Year'
-                    value={exp.endYear}
-                    onChange={e =>
-                      handleExperienceChange(index, 'endYear', e.target.value)
-                    }
-                  />
-                  <FontAwesomeIcon
-                    icon={faTrash}
-                    onClick={() => handleDeleteExperience(index)}
-                    className='delete-icon'
-                  />
-                </>
-              ) : (
-                <div>
-                  <p>Company: {exp.company}</p>
-                  <p>Title: {exp.title}</p>
-                  <p>Start Year: {exp.startYear}</p>
-                  <p>End Year: {exp.endYear}</p>
-                </div>
-              )}
-            </div>
-          ))}
-          {editMode.experience && (
-            <button onClick={handleAddExperience}>Add Experience</button>
-          )}
-        </div>
-        <div className='profile-skills-section'>
-          <div className='section-header'>
-            <h3>Skills</h3>
-            <FontAwesomeIcon
-              icon={faPen}
-              onClick={() =>
-                setEditMode({ ...editMode, skills: !editMode.skills })
-              }
-              className='edit-icon'
-            />
-          </div>
-          {skills.map((skill, index) => (
-            <div key={index} className='profile-skill-item'>
-              {editMode.skills ? (
-                <>
-                  <input
-                    type='text'
-                    placeholder='Skill'
-                    value={skill}
-                    onChange={e => handleSkillChange(index, e.target.value)}
-                  />
-                  <FontAwesomeIcon
-                    icon={faTrash}
-                    onClick={() => handleDeleteSkill(index)}
-                    className='delete-icon'
-                  />
-                </>
-              ) : (
-                <p>Skill: {skill}</p>
-              )}
-            </div>
-          ))}
-          {editMode.skills && (
-            <button onClick={handleAddSkill}>Add Skill</button>
-          )}
-        </div>
-
+        {/* Personal Information Section */}
+        <PersonalInfoSection
+          personalInfo={personalInfo}
+          setPersonalInfo={setPersonalInfo}
+          editMode={editMode.personal}
+          setEditMode={flag =>
+            setEditMode(prev => ({ ...prev, personal: flag }))
+          }
+          isOwner={true} // Since the owner is viewing their own profile
+        />
+        {/* Education Section */}
+        <EducationSection
+          education={education}
+          setEducation={setEducation}
+          editMode={editMode.education}
+          setEditMode={flag =>
+            setEditMode(prev => ({ ...prev, education: flag }))
+          }
+        />
+        {/* Experience Section */}
+        <ExperienceSection
+          experience={experience}
+          setExperience={setExperience}
+          editMode={editMode.experience}
+          setEditMode={flag =>
+            setEditMode(prev => ({ ...prev, experience: flag }))
+          }
+        />
+        {/* Skills Section */}
+        <SkillsSection
+          skills={skills}
+          setSkills={setSkills}
+          editMode={editMode.skills}
+          setEditMode={flag => setEditMode(prev => ({ ...prev, skills: flag }))}
+        />
+        {/* Update Profile Button */}
         <div className='update-profile-button'>
           <button onClick={handleUpdateProfile}>Update Profile</button>
         </div>
