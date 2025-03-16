@@ -7,6 +7,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import logo from '../assets/logo.png';
 import Khteamup from '../components/Khteamup';
 import Slogan from '../components/Slogan';
+import { jwtDecode } from 'jwt-decode';
 
 function SignInPage() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ function SignInPage() {
 
   // Toggle password visibility
   const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+    setShowPassword(prev => !prev);
   };
 
   // Handle form submission
@@ -37,24 +38,27 @@ function SignInPage() {
         'http://localhost:5200/api/auth/login',
         formData
       );
-      console.log('Full Response:', response); // Log the entire response object
-
-      // Check status and response structure
-      console.log('Status:', response.status);
-      console.log('Response Data:', response.data);
+      console.log('Full Response:', response);
 
       if (response.status === 200 && response.data.success) {
-        // Check success flag
-        const token = response.data.data.token; // Access token correctly
+        // Extract token from the response
+        const token = response.data.data.token;
         console.log('Extracted Token:', token);
 
         if (token) {
+          // Store token in localStorage
           localStorage.setItem('token', token);
+
+          // Decode token to get userId
+          const decoded = jwtDecode(token);
+          const userId = decoded.userId;
           toast.success('Login successful!', {
             position: 'top-right',
             autoClose: 2000
           });
-          setTimeout(() => navigate('/profile'), 2000);
+
+          // Navigate to the dynamic profile route
+          setTimeout(() => navigate(`/profile/${userId}`), 2000);
         } else {
           throw new Error('No token received from server');
         }
@@ -62,7 +66,7 @@ function SignInPage() {
         throw new Error(response.data.message || 'Login failed');
       }
     } catch (err) {
-      console.error('Error:', err); // Log the full error
+      console.error('Error:', err);
       const errorResponse =
         err.response?.data?.message || 'Invalid credentials. Please try again.';
       setErrors({ email: errorResponse });

@@ -1,4 +1,6 @@
+// NavBar.jsx
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faHome,
@@ -10,78 +12,68 @@ import {
   faUser,
   faRightFromBracket
 } from '@fortawesome/free-solid-svg-icons';
+import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
 import Khteamup from './Khteamup';
 import Slogan from './Slogan';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; 
-import { useEffect, useState } from 'react'; 
+import 'react-toastify/dist/ReactToastify.css';
 
 function NavBar() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(localStorage.getItem('token')); 
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [userId, setUserId] = useState('');
 
-  // Effect to listen for changes in localStorage
+  // Decode the token to get userId and store it in local state (and localStorage)
+  useEffect(() => {
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        if (decoded.userId) {
+          setUserId(decoded.userId);
+          localStorage.setItem('userId', decoded.userId);
+        }
+      } catch (error) {
+        console.error('Failed to decode token', error);
+      }
+    }
+  }, [token]);
+
+  // Listen for changes in localStorage
   useEffect(() => {
     const handleStorageChange = () => {
       setToken(localStorage.getItem('token'));
+      setUserId(localStorage.getItem('userId'));
     };
 
     window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Logout handler with toast notifications
   const handleLogout = async () => {
     try {
-      // Show loading toast while logout is processing
       const logoutToastId = toast.loading('Logging out...');
-
-      // Call the backend logout endpoint
       await axios.post(
         'http://localhost:5200/api/auth/logout',
         {},
-        {
-          withCredentials: true
-        }
+        { withCredentials: true }
       );
-
-      // Clear the token from localStorage
       localStorage.removeItem('token');
-
-      // Update toast to success
+      localStorage.removeItem('userId');
       toast.update(logoutToastId, {
         render: 'Successfully logged out!',
         type: 'success',
         isLoading: false,
-        autoClose: 2000, 
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true
+        autoClose: 2000
       });
-
-      // Redirect to sign-in page after a short delay to show the toast
-      setTimeout(() => {
-        navigate('/signin');
-      }, 2000);
+      setTimeout(() => navigate('/signin'), 2000);
     } catch (error) {
       console.error('Logout failed:', error);
-
-      // Show error toast
-      toast.error('Failed to log out. Please try again.', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true
-      });
+      toast.error('Failed to log out. Please try again.', { autoClose: 3000 });
     }
   };
 
-  // We will show the NavBar only if the user is logged in (token exists) and not on /signup or /signin pages
   const location = window.location.pathname;
   const showNavBar = token && !['/signup', '/signin'].includes(location);
 
@@ -106,7 +98,7 @@ function NavBar() {
               <input
                 type='text'
                 placeholder='Search...'
-                className='bg-white rounded-md px-3 py-1.5 text-base text-gray-900 outline-none focus:outline-none w-100'
+                className='bg-white rounded-md px-3 py-1.5 text-base text-gray-900'
               />
             </div>
             <div className='flex items-center space-x-4'>
@@ -177,7 +169,7 @@ function NavBar() {
                 <span>Candidates</span>
               </NavLink>
               <NavLink
-                to='/profile'
+                to={`/profile/${userId}`}
                 className={({ isActive }) =>
                   isActive
                     ? 'text-[#21ADEA] flex flex-col items-center'
@@ -198,18 +190,7 @@ function NavBar() {
           </div>
         </nav>
       )}
-      {/* Add ToastContainer to display the notifications */}
-      <ToastContainer
-        position='top-right'
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      <ToastContainer position='top-right' autoClose={3000} />
     </>
   );
 }
