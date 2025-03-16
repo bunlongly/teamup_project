@@ -68,6 +68,7 @@ function Profile() {
           return;
         }
       }
+
       try {
         const response = await axios.get(
           `http://localhost:5200/api/user/${userId}`,
@@ -76,21 +77,25 @@ function Profile() {
           }
         );
         const userData = response.data.data;
+
         // Set personal info fields
         setPersonalInfo({
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-          username: userData.username,
-          phoneNumber: userData.phoneNumber,
-          dateOfBirth: userData.dateOfBirth,
-          location: userData.location,
-          jobTitle: userData.jobTitle,
-          bio: userData.bio,
-          description: userData.description
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          username: userData.username || '',
+          phoneNumber: userData.phoneNumber || '',
+          dateOfBirth: userData.dateOfBirth || '',
+          location: userData.location || '',
+          jobTitle: userData.jobTitle || '',
+          bio: userData.bio || '',
+          description: userData.description || ''
         });
-        // Set education, experience, and skills
+
+        // Set education
         if (userData.education) setEducation(userData.education);
+
+        // Set experience (transform and include employmentType, description)
         if (userData.experience) {
           const transformedExperience = userData.experience.map(exp => ({
             company: exp.company,
@@ -98,16 +103,21 @@ function Profile() {
             startYear: new Date(exp.startDate).getFullYear().toString(),
             endYear: exp.endDate
               ? new Date(exp.endDate).getFullYear().toString()
-              : 'Present'
+              : 'Present',
+            employmentType: exp.employmentType || '',
+            description: exp.description || ''
           }));
           setExperience(transformedExperience);
         }
+
+        // Set skills
         if (userData.userSkills) {
           const transformedSkills = userData.userSkills.map(
             us => us.skill.skillName
           );
           setSkills(transformedSkills);
         }
+
         // Set images (assume API returns fields "imageUrl" and "coverImage")
         if (userData.imageUrl) setProfilePicture(userData.imageUrl);
         if (userData.coverImage) setCoverPhoto(userData.coverImage);
@@ -115,6 +125,7 @@ function Profile() {
         console.error('Failed to fetch user data:', error);
       }
     };
+
     fetchUserData();
   }, [navigate]);
 
@@ -156,7 +167,6 @@ function Profile() {
         return;
       }
     }
-    console.log('User ID:', userId);
 
     // Transform experience to include required "position" field
     const transformedExperience = experience.map(exp => ({
@@ -176,9 +186,11 @@ function Profile() {
     formData.append('jobTitle', personalInfo.jobTitle);
     formData.append('bio', personalInfo.bio);
     formData.append('description', personalInfo.description);
+
     formData.append('education', JSON.stringify(education));
     formData.append('experience', JSON.stringify(transformedExperience));
     formData.append('skills', JSON.stringify(skills));
+
     if (profilePictureFile) {
       formData.append('imageUrl', profilePictureFile);
     }
@@ -193,6 +205,7 @@ function Profile() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log('Profile updated:', response.data);
+
       const updatedUser = response.data.data;
       // Update state with returned data
       setPersonalInfo({
@@ -207,6 +220,7 @@ function Profile() {
         bio: updatedUser.bio,
         description: updatedUser.description
       });
+
       if (updatedUser.education) setEducation(updatedUser.education);
       if (updatedUser.experience) {
         const mappedExp = updatedUser.experience.map(exp => ({
@@ -215,7 +229,9 @@ function Profile() {
           startYear: new Date(exp.startDate).getFullYear().toString(),
           endYear: exp.endDate
             ? new Date(exp.endDate).getFullYear().toString()
-            : 'Present'
+            : 'Present',
+          employmentType: exp.employmentType || '',
+          description: exp.description || ''
         }));
         setExperience(mappedExp);
       }
@@ -225,6 +241,7 @@ function Profile() {
         );
         setSkills(mappedSkills);
       }
+
       // Turn off edit mode for all sections
       setEditMode({
         personal: false,
@@ -238,39 +255,55 @@ function Profile() {
   };
 
   return (
-    <div className='grid grid-cols-10 w-full mx-auto space-x-8 profile-page-container'>
-      <div className='col-span-7 profile-page'>
-        {/* Cover Photo */}
-        <div
-          className='profile-cover-photo'
+    <div className='w-full mx-auto'>
+      {/* Cover Photo Section */}
+      <div className='relative h-60 bg-gray-200'>
+        {coverPhoto ? (
+          <img
+            src={coverPhoto}
+            alt='Cover'
+            className='object-cover w-full h-full'
+          />
+        ) : (
+          <div className='w-full h-full flex items-center justify-center bg-gray-300'>
+            <FontAwesomeIcon
+              icon={faCamera}
+              size='3x'
+              className='text-gray-600'
+            />
+            <p className='ml-2 text-gray-600'>Click to add cover photo</p>
+          </div>
+        )}
+        <input
+          type='file'
+          id='coverPhotoInput'
+          style={{ display: 'none' }}
+          onChange={handleCoverPhotoChange}
+        />
+        <button
+          className='absolute top-2 right-2 px-3 py-1 bg-white text-sm text-gray-700 shadow'
           onClick={() => document.getElementById('coverPhotoInput').click()}
         >
-          {coverPhoto ? (
-            <img src={coverPhoto} alt='Cover' />
-          ) : (
-            <div className='cover-photo-placeholder'>
-              <FontAwesomeIcon icon={faCamera} size='3x' />
-              <p>Click to add cover photo</p>
-            </div>
-          )}
-          <input
-            type='file'
-            id='coverPhotoInput'
-            style={{ display: 'none' }}
-            onChange={handleCoverPhotoChange}
-          />
-        </div>
-        {/* Profile Picture */}
-        <div
-          className='profile-picture'
-          onClick={() => document.getElementById('profilePictureInput').click()}
-        >
+          Change Cover
+        </button>
+      </div>
+
+      {/* Profile Picture + Basic Info */}
+      <div className='flex flex-col md:flex-row items-center md:items-start px-4 md:px-8 -mt-12 md:-mt-8'>
+        <div className='relative'>
           {profilePicture ? (
-            <img src={profilePicture} alt='Profile' />
+            <img
+              src={profilePicture}
+              alt='Profile'
+              className='w-32 h-32 rounded-full border-4 border-white object-cover'
+            />
           ) : (
-            <div className='profile-picture-placeholder'>
-              <FontAwesomeIcon icon={faCamera} size='3x' />
-              <p>Click to add profile picture</p>
+            <div className='w-32 h-32 rounded-full border-4 border-white bg-gray-300 flex items-center justify-center'>
+              <FontAwesomeIcon
+                icon={faCamera}
+                size='2x'
+                className='text-gray-600'
+              />
             </div>
           )}
           <input
@@ -279,49 +312,123 @@ function Profile() {
             style={{ display: 'none' }}
             onChange={handleProfilePictureChange}
           />
+          <button
+            className='absolute bottom-0 right-0 bg-white px-2 py-1 text-sm shadow'
+            onClick={() =>
+              document.getElementById('profilePictureInput').click()
+            }
+          >
+            Change
+          </button>
         </div>
-        {/* Personal Information Section */}
-        <PersonalInfoSection
-          personalInfo={personalInfo}
-          setPersonalInfo={setPersonalInfo}
-          editMode={editMode.personal}
-          setEditMode={flag =>
-            setEditMode(prev => ({ ...prev, personal: flag }))
-          }
-          isOwner={true} // Since the owner is viewing their own profile
-        />
-        {/* Education Section */}
-        <EducationSection
-          education={education}
-          setEducation={setEducation}
-          editMode={editMode.education}
-          setEditMode={flag =>
-            setEditMode(prev => ({ ...prev, education: flag }))
-          }
-        />
-        {/* Experience Section */}
-        <ExperienceSection
-          experience={experience}
-          setExperience={setExperience}
-          editMode={editMode.experience}
-          setEditMode={flag =>
-            setEditMode(prev => ({ ...prev, experience: flag }))
-          }
-        />
-        {/* Skills Section */}
-        <SkillsSection
-          skills={skills}
-          setSkills={setSkills}
-          editMode={editMode.skills}
-          setEditMode={flag => setEditMode(prev => ({ ...prev, skills: flag }))}
-        />
-        {/* Update Profile Button */}
-        <div className='update-profile-button'>
-          <button onClick={handleUpdateProfile}>Update Profile</button>
+        <div className='mt-4 md:mt-0 md:ml-6 flex-1'>
+          <h1 className='text-2xl font-bold'>
+            {personalInfo.firstName} {personalInfo.lastName}
+          </h1>
+          <p className='text-gray-600'>
+            {personalInfo.jobTitle
+              ? personalInfo.jobTitle
+              : 'Work at Limkokwing University of Creative Technology'}
+          </p>
+          <p className='text-gray-500'>
+            {personalInfo.location
+              ? personalInfo.location
+              : 'Phnom Penh, Cambodia'}
+          </p>
+          <div className='mt-2'>
+            <p className='text-blue-500 font-medium'>50 Connections</p>
+            <p className='text-gray-500 text-sm'>
+              Contact info: {personalInfo.email}
+            </p>
+          </div>
         </div>
       </div>
-      <div className='col-span-3 profile-page-right'>
-        {/* Additional content or sidebar */}
+
+      {/* Main Content: Two-Column Layout */}
+      <div className='mt-6 px-4 md:px-8 grid grid-cols-12 gap-4'>
+        {/* LEFT COLUMN (col-span-8) */}
+        <div className='col-span-12 md:col-span-8 space-y-4'>
+          {/* Personal Info Section */}
+          <div className='bg-white rounded-lg shadow p-4'>
+            <PersonalInfoSection
+              personalInfo={personalInfo}
+              setPersonalInfo={setPersonalInfo}
+              editMode={editMode.personal}
+              setEditMode={flag =>
+                setEditMode(prev => ({ ...prev, personal: flag }))
+              }
+              isOwner={true}
+            />
+          </div>
+          {/* Education Section */}
+          <div className='bg-white rounded-lg shadow p-4'>
+            <EducationSection
+              education={education}
+              setEducation={setEducation}
+              editMode={editMode.education}
+              setEditMode={flag =>
+                setEditMode(prev => ({ ...prev, education: flag }))
+              }
+            />
+          </div>
+          {/* Experience Section */}
+          <div className='bg-white rounded-lg shadow p-4'>
+            <ExperienceSection
+              experience={experience}
+              setExperience={setExperience}
+              editMode={editMode.experience}
+              setEditMode={flag =>
+                setEditMode(prev => ({ ...prev, experience: flag }))
+              }
+            />
+          </div>
+          {/* Skills Section */}
+          <div className='bg-white rounded-lg shadow p-4'>
+            <SkillsSection
+              skills={skills}
+              setSkills={setSkills}
+              editMode={editMode.skills}
+              setEditMode={flag =>
+                setEditMode(prev => ({ ...prev, skills: flag }))
+              }
+            />
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN (col-span-4) */}
+        <div className='col-span-12 md:col-span-4 space-y-4'>
+          {/* Example: Profile Language / Profile & URL / Connections Suggestion */}
+          <div className='bg-white rounded-lg shadow p-4'>
+            <h3 className='text-lg font-semibold mb-2'>Profile Language</h3>
+            <p className='text-sm text-gray-500'>
+              Choose which language your profile is displayed in.
+            </p>
+          </div>
+
+          <div className='bg-white rounded-lg shadow p-4'>
+            <h3 className='text-lg font-semibold mb-2'>Profile & URL</h3>
+            <p className='text-sm text-gray-500'>
+              Customize your public profile URL, email signature, etc.
+            </p>
+          </div>
+
+          <div className='bg-white rounded-lg shadow p-4'>
+            <h3 className='text-lg font-semibold mb-2'>Connection Suggest</h3>
+            <p className='text-sm text-gray-500'>
+              People you may know or want to connect with.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Update Button */}
+      <div className='px-4 md:px-8 mt-6 mb-10'>
+        <button
+          onClick={handleUpdateProfile}
+          className='bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700'
+        >
+          Update Profile
+        </button>
       </div>
     </div>
   );

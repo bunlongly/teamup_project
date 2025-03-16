@@ -15,3 +15,36 @@ To-Do Tasks:
 
 
 * Complete post-project management tasks.
+
+
+ <div className='bg-white rounded-lg shadow p-4'>
+          <div className='flex items-center justify-between mb-2'>
+            <h2 className='text-lg font-semibold'>Current project</h2>
+            {/* Example of an edit icon, if you want to toggle edit mode */}
+            {/* <FontAwesomeIcon icon={faPen} className='cursor-pointer' /> */}
+          </div>
+          {/* Example project listing */}
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between'>
+            <div>
+              <p className='font-medium'>
+                Collaborative Work Management Platform
+              </p>
+              <p className='text-sm text-gray-500'>Front-End</p>
+            </div>
+            <div className='mt-2 md:mt-0 text-blue-500 font-medium'>
+              Progress
+            </div>
+          </div>
+          <hr className='my-2' />
+          <div className='flex flex-col md:flex-row md:items-center md:justify-between'>
+            <div>
+              <p className='font-medium'>
+                Collaborative Work Management Platform
+              </p>
+              <p className='text-sm text-gray-500'>Start Date: Jan 1st, 2025</p>
+            </div>
+            <div className='mt-2 md:mt-0 text-blue-500 font-medium'>
+              Progress
+            </div>
+          </div>
+        </div>
