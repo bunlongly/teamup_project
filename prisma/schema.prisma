@@ -29,6 +29,7 @@ model User {
   jobTitle    String?
   bio         String?
   description String?
+  socialLinks   Json?   @default("{}")
   
   // Relationships
   education   Education[]  // One-to-many relationship with Education

@@ -36,7 +36,7 @@ const uploadImageToCloudinary = async base64Image => {
   });
 };
 
-// Delete image from Cloudinary (if needed)
+// DELETE image from Cloudinary (if needed)
 const deleteImageFromCloudinary = async publicId => {
   console.log('Deleting image from Cloudinary:', publicId);
   return new Promise((resolve, reject) => {
@@ -136,13 +136,30 @@ export const updateUserProfile = async (req, res) => {
   console.log('Request files:', req.files);
 
   // Extract relation fields and other fields from the request body
-  const { education, experience, skills, dateOfBirth, ...otherFields } =
-    req.body;
+  // Also extract socialLinks (expecting a JSON string)
+  const {
+    education,
+    experience,
+    skills,
+    dateOfBirth,
+    socialLinks,
+    ...otherFields
+  } = req.body;
   const updateData = { ...otherFields };
 
   // If dateOfBirth is provided, convert it to a Date object
   if (dateOfBirth) {
     updateData.dateOfBirth = new Date(dateOfBirth);
+  }
+
+  // Parse socialLinks if provided (it should be sent as a JSON string)
+  if (socialLinks) {
+    try {
+      updateData.socialLinks = JSON.parse(socialLinks);
+    } catch (parseError) {
+      console.error('Error parsing socialLinks:', parseError);
+      // You might want to handle the error or send a response here
+    }
   }
 
   try {

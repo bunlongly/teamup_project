@@ -7,6 +7,7 @@ import PersonalInfoSection from './PersonalInfoSection.jsx';
 import EducationSection from './EducationSection.jsx';
 import ExperienceSection from './ExperienceSection.jsx';
 import SkillsSection from './SkillsSection.jsx';
+import SocialLinksSection from './SocialLinksSection.jsx';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCamera } from '@fortawesome/free-solid-svg-icons';
@@ -39,12 +40,23 @@ function Profile() {
     description: ''
   });
 
+  // New state for social links
+  const [socialLinks, setSocialLinks] = useState({
+    github: '',
+    twitter: '',
+    youtube: '',
+    facebook: '',
+    instagram: '',
+    portfolio: ''
+  });
+
   // Edit mode state for each section
   const [editMode, setEditMode] = useState({
     personal: false,
     education: false,
     experience: false,
-    skills: false
+    skills: false,
+    social: false
   });
 
   // On mount, fetch profile data
@@ -68,13 +80,10 @@ function Profile() {
           return;
         }
       }
-
       try {
         const response = await axios.get(
           `http://localhost:5200/api/user/${userId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const userData = response.data.data;
 
@@ -91,6 +100,18 @@ function Profile() {
           bio: userData.bio || '',
           description: userData.description || ''
         });
+
+        // Set social links (if available)
+        setSocialLinks(
+          userData.socialLinks || {
+            github: '',
+            twitter: '',
+            youtube: '',
+            facebook: '',
+            instagram: '',
+            portfolio: ''
+          }
+        );
 
         // Set education
         if (userData.education) setEducation(userData.education);
@@ -186,7 +207,7 @@ function Profile() {
     formData.append('jobTitle', personalInfo.jobTitle);
     formData.append('bio', personalInfo.bio);
     formData.append('description', personalInfo.description);
-
+    formData.append('socialLinks', JSON.stringify(socialLinks));
     formData.append('education', JSON.stringify(education));
     formData.append('experience', JSON.stringify(transformedExperience));
     formData.append('skills', JSON.stringify(skills));
@@ -205,7 +226,6 @@ function Profile() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log('Profile updated:', response.data);
-
       const updatedUser = response.data.data;
       // Update state with returned data
       setPersonalInfo({
@@ -220,7 +240,9 @@ function Profile() {
         bio: updatedUser.bio,
         description: updatedUser.description
       });
-
+      if (updatedUser.socialLinks) {
+        setSocialLinks(updatedUser.socialLinks);
+      }
       if (updatedUser.education) setEducation(updatedUser.education);
       if (updatedUser.experience) {
         const mappedExp = updatedUser.experience.map(exp => ({
@@ -241,13 +263,13 @@ function Profile() {
         );
         setSkills(mappedSkills);
       }
-
       // Turn off edit mode for all sections
       setEditMode({
         personal: false,
         education: false,
         experience: false,
-        skills: false
+        skills: false,
+        social: false
       });
     } catch (error) {
       console.error('Failed to update profile:', error);
@@ -326,14 +348,11 @@ function Profile() {
             {personalInfo.firstName} {personalInfo.lastName}
           </h1>
           <p className='text-gray-600'>
-            {personalInfo.jobTitle
-              ? personalInfo.jobTitle
-              : 'Work at Limkokwing University of Creative Technology'}
+            {personalInfo.jobTitle ||
+              'Work at Limkokwing University of Creative Technology'}
           </p>
           <p className='text-gray-500'>
-            {personalInfo.location
-              ? personalInfo.location
-              : 'Phnom Penh, Cambodia'}
+            {personalInfo.location || 'Phnom Penh, Cambodia'}
           </p>
           <div className='mt-2'>
             <p className='text-blue-500 font-medium'>50 Connections</p>
@@ -397,19 +416,32 @@ function Profile() {
 
         {/* RIGHT COLUMN (col-span-4) */}
         <div className='col-span-12 md:col-span-4 space-y-4'>
-          {/* Example: Profile Language / Profile & URL / Connections Suggestion */}
+          {/* Profile URL Section */}
           <div className='bg-white rounded-lg shadow p-4'>
-            <h3 className='text-lg font-semibold mb-2'>Profile Language</h3>
+            <h3 className='text-lg font-semibold mb-2'>Profile URL</h3>
             <p className='text-sm text-gray-500'>
-              Choose which language your profile is displayed in.
+              Your public profile can be accessed at:
             </p>
+            <a
+              href={`https://yourdomain.com/profile/${personalInfo.username}`}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='text-blue-500 hover:underline'
+            >
+              https://yourdomain.com/profile/{personalInfo.username}
+            </a>
           </div>
 
+          {/* Social Links Section */}
           <div className='bg-white rounded-lg shadow p-4'>
-            <h3 className='text-lg font-semibold mb-2'>Profile & URL</h3>
-            <p className='text-sm text-gray-500'>
-              Customize your public profile URL, email signature, etc.
-            </p>
+            <SocialLinksSection
+              socialLinks={socialLinks}
+              setSocialLinks={newLinks => setSocialLinks(newLinks)}
+              editMode={editMode.social}
+              setEditMode={flag =>
+                setEditMode(prev => ({ ...prev, social: flag }))
+              }
+            />
           </div>
 
           <div className='bg-white rounded-lg shadow p-4'>
@@ -425,7 +457,7 @@ function Profile() {
       <div className='px-4 md:px-8 mt-6 mb-10'>
         <button
           onClick={handleUpdateProfile}
-          className='bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700'
+          className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow'
         >
           Update Profile
         </button>
