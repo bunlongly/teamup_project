@@ -108,16 +108,17 @@ model UserSkill {
 model Post {
   id                 String    @id @default(uuid())
   postType           PostType
-  content            String?   // For STATUS posts
-  projectName        String?   // For RECRUITMENT and PROJECT_SEEKING posts
-  projectDescription String?   // For RECRUITMENT and PROJECT_SEEKING posts
-  projectType        String?   // For RECRUITMENT posts
-  duration           String?   // For RECRUITMENT posts
-  startDate          DateTime? // For RECRUITMENT posts
-  endDate            DateTime? // For RECRUITMENT posts
-  fileUrl            String?   // URL of the uploaded file (optional)
-  role               String?   // For RECRUITMENT posts (role needed)
-  requirement        String?   // For RECRUITMENT posts (role requirement)
+  content            String?   
+  projectName        String?   
+  projectDescription String?   
+  projectType        String?  
+  platform           String?   
+  technicalRole      String?  
+  duration           String?   
+  startDate          DateTime? 
+  endDate            DateTime? 
+  fileUrl            String?   
+  requirement        String?   
   userId             String
   user               User      @relation(fields: [userId], references: [id])
   createdAt          DateTime  @default(now())

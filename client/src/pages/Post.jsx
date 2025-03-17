@@ -38,7 +38,10 @@ function CreatePostPage() {
     file: null
   });
 
-  // When switching post types, reset non-relevant fields
+  // State for previewing the uploaded file
+  const [previewImage, setPreviewImage] = useState(null);
+
+  // When switching post types, reset non-relevant fields and clear file preview
   const handlePostTypeChange = type => {
     setPostType(type);
     setFormData({
@@ -54,15 +57,26 @@ function CreatePostPage() {
       requirement: '',
       file: null
     });
+    setPreviewImage(null);
   };
 
   // Handle input changes (for text and file inputs)
   const handleChange = e => {
     const { name, value, files } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: files ? files[0] : value
-    }));
+    if (files) {
+      setFormData(prev => ({
+        ...prev,
+        [name]: files[0]
+      }));
+      if (name === 'file') {
+        setPreviewImage(URL.createObjectURL(files[0]));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   // Automatically calculate duration when both startDate and endDate are set
@@ -76,7 +90,6 @@ function CreatePostPage() {
       const end = new Date(formData.endDate);
       const diffInDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
       let durationStr = '';
-
       if (diffInDays < 7) {
         durationStr = `${diffInDays} day${diffInDays !== 1 ? 's' : ''}`;
       } else if (diffInDays < 30) {
@@ -305,7 +318,8 @@ function CreatePostPage() {
                     className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
                   />
                 </div>
-                {/* Additional fields for project type, platform, etc. */}
+
+                {/* Additional dropdown fields */}
                 <div className='flex space-x-4 mt-4'>
                   <div className='w-1/3'>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -390,41 +404,49 @@ function CreatePostPage() {
                 Upload File
               </label>
               <div className='mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg'>
-                <div className='space-y-1 text-center'>
-                  <svg
-                    className='mx-auto h-12 w-12 text-gray-400'
-                    stroke='currentColor'
-                    fill='none'
-                    viewBox='0 0 48 48'
-                    aria-hidden='true'
-                  >
-                    <path
-                      d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02'
-                      strokeWidth='2'
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                    />
-                  </svg>
-                  <div className='flex text-sm text-gray-600'>
-                    <label
-                      htmlFor='file-upload'
-                      className='relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500'
+                {formData.file ? (
+                  <img
+                    src={URL.createObjectURL(formData.file)}
+                    alt='Preview'
+                    className='max-h-64 rounded-lg'
+                  />
+                ) : (
+                  <div className='space-y-1 text-center'>
+                    <svg
+                      className='mx-auto h-12 w-12 text-gray-400'
+                      stroke='currentColor'
+                      fill='none'
+                      viewBox='0 0 48 48'
+                      aria-hidden='true'
                     >
-                      <span>Upload a file</span>
-                      <input
-                        id='file-upload'
-                        name='file'
-                        type='file'
-                        onChange={handleChange}
-                        className='sr-only'
+                      <path
+                        d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                       />
-                    </label>
-                    <p className='pl-1'>or drag and drop</p>
+                    </svg>
+                    <div className='flex text-sm text-gray-600'>
+                      <label
+                        htmlFor='file-upload'
+                        className='relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500'
+                      >
+                        <span>Upload a file</span>
+                        <input
+                          id='file-upload'
+                          name='file'
+                          type='file'
+                          onChange={handleChange}
+                          className='sr-only'
+                        />
+                      </label>
+                      <p className='pl-1'>or drag and drop</p>
+                    </div>
+                    <p className='text-xs text-gray-500'>
+                      PNG, JPG, GIF up to 10MB
+                    </p>
                   </div>
-                  <p className='text-xs text-gray-500'>
-                    PNG, JPG, GIF up to 10MB
-                  </p>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -433,8 +455,7 @@ function CreatePostPage() {
           <div className='flex justify-center mt-6'>
             <button
               type='submit'
-              className='rounded-lg px-6 py-3 text-sm font-semibold text-white shadow-md hover:bg-blue-700 transition-colors'
-              style={{ backgroundColor: '#0046b0' }}
+              className='rounded-full px-8 py-3 bg-blue-600 text-white text-lg font-bold shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:-translate-y-1'
             >
               Create
             </button>
