@@ -13,6 +13,12 @@ enum Role {
   FREELANCER
 }
 
+enum PostType {
+  STATUS
+  RECRUITMENT
+  PROJECT_SEEKING
+}
+
 model User {
   id          String     @id @default(uuid()) // Use UUID as the primary key
   firstName   String
@@ -35,6 +41,7 @@ model User {
   education   Education[]  // One-to-many relationship with Education
   experience  Experience[]  // One-to-many relationship with Experience
   userSkills  UserSkill[]   // One-to-many relationship with UserSkill (pivot table)
+  posts         Post[]  
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -95,4 +102,24 @@ model UserSkill {
   // Relations
   user      User    @relation(fields: [userId], references: [id])
   skill     Skill   @relation(fields: [skillId], references: [id])
+}
+
+
+model Post {
+  id                 String    @id @default(uuid())
+  postType           PostType
+  content            String?   // For STATUS posts
+  projectName        String?   // For RECRUITMENT and PROJECT_SEEKING posts
+  projectDescription String?   // For RECRUITMENT and PROJECT_SEEKING posts
+  projectType        String?   // For RECRUITMENT posts
+  duration           String?   // For RECRUITMENT posts
+  startDate          DateTime? // For RECRUITMENT posts
+  endDate            DateTime? // For RECRUITMENT posts
+  fileUrl            String?   // URL of the uploaded file (optional)
+  role               String?   // For RECRUITMENT posts (role needed)
+  requirement        String?   // For RECRUITMENT posts (role requirement)
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
