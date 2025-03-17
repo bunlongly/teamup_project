@@ -90,3 +90,27 @@ export const createPost = async (req, res) => {
     );
   }
 };
+
+
+
+export const getAllPosts = async (req, res) => {
+  try {
+    const posts = await prisma.post.findMany({
+      include: {
+        user: true // or select certain fields: { select: { firstName: true, ... } }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    return successResponse(res, 'Posts retrieved successfully', posts);
+  } catch (error) {
+    console.error('Error fetching posts:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching posts',
+      error.message
+    );
+  }
+};

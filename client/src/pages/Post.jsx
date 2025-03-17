@@ -1,5 +1,5 @@
 // CreatePostPage.jsx
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -228,7 +228,7 @@ function CreatePostPage() {
                 transition={{ duration: 0.3 }}
               >
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
-                  What's on your mind?
+                  What is on your mind?
                 </label>
                 <textarea
                   name='content'
