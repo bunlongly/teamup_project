@@ -135,8 +135,8 @@ export const updateUserProfile = async (req, res) => {
   console.log('Request body:', req.body);
   console.log('Request files:', req.files);
 
-  // Extract relation fields and other fields from the request body
-  // Also extract socialLinks (expecting a JSON string)
+  // Extract relation fields and other fields from the request body,
+  // including socialLinks (which should be sent as a JSON string)
   const {
     education,
     experience,
@@ -147,27 +147,42 @@ export const updateUserProfile = async (req, res) => {
   } = req.body;
   const updateData = { ...otherFields };
 
-  // If dateOfBirth is provided, convert it to a Date object
+  // Convert dateOfBirth to Date if provided
   if (dateOfBirth) {
     updateData.dateOfBirth = new Date(dateOfBirth);
   }
 
-  // Parse socialLinks if provided (it should be sent as a JSON string)
+  // Parse socialLinks if provided
   if (socialLinks) {
     try {
       updateData.socialLinks = JSON.parse(socialLinks);
     } catch (parseError) {
       console.error('Error parsing socialLinks:', parseError);
-      // You might want to handle the error or send a response here
+      // Optionally return an error here
     }
   }
 
   try {
+    // Get the existing user record
     const existingUser = await prisma.user.findUnique({
       where: { id: userId }
     });
     if (!existingUser) {
       return errorResponse(res, StatusCodes.NOT_FOUND, 'User not found');
+    }
+
+    // Check if username is being updated to a new value
+    if (updateData.username && updateData.username !== existingUser.username) {
+      const usernameExists = await prisma.user.findUnique({
+        where: { username: updateData.username }
+      });
+      if (usernameExists) {
+        return errorResponse(
+          res,
+          StatusCodes.CONFLICT,
+          'Username already exists'
+        );
+      }
     }
 
     // Handle Profile Image Upload (from memory, field "imageUrl")

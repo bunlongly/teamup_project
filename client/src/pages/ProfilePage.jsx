@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 import PersonalInfoSection from './PersonalInfoSection.jsx';
 import EducationSection from './EducationSection.jsx';
@@ -86,6 +88,7 @@ function Profile() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         const userData = response.data.data;
+        console.log(userData);
 
         // Set personal info fields
         setPersonalInfo({
@@ -271,8 +274,16 @@ function Profile() {
         skills: false,
         social: false
       });
+      toast.success('Profile updated successfully!', {
+        position: 'top-right',
+        autoClose: 3000
+      });
     } catch (error) {
       console.error('Failed to update profile:', error);
+      toast.error('Failed to update profile. Please try again.', {
+        position: 'top-right',
+        autoClose: 5000
+      });
     }
   };
 
@@ -343,10 +354,14 @@ function Profile() {
             Change
           </button>
         </div>
-        <div className='mt-4 md:mt-0 md:ml-6 flex-1'>
+        <div className='mt-10 md:mt-10 md:ml-6 flex-1'>
           <h1 className='text-2xl font-bold'>
             {personalInfo.firstName} {personalInfo.lastName}
           </h1>
+          <p className='text-gray-600'>
+            {personalInfo.username ||
+              'Work at Limkokwing University of Creative Technology'}
+          </p>
           <p className='text-gray-600'>
             {personalInfo.jobTitle ||
               'Work at Limkokwing University of Creative Technology'}
@@ -444,6 +459,7 @@ function Profile() {
             />
           </div>
 
+          {/* Additional Right Column Content */}
           <div className='bg-white rounded-lg shadow p-4'>
             <h3 className='text-lg font-semibold mb-2'>Connection Suggest</h3>
             <p className='text-sm text-gray-500'>
@@ -462,6 +478,18 @@ function Profile() {
           Update Profile
         </button>
       </div>
+
+      <ToastContainer
+        position='top-right'
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 }

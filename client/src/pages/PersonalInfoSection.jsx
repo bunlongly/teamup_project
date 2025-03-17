@@ -56,6 +56,18 @@ const PersonalInfoSection = ({
               />
             </div>
           </div>
+          {/* Username */}
+          <div>
+            <label className='block text-sm font-medium text-gray-700'>
+              Username
+            </label>
+            <input
+              type='text'
+              value={personalInfo.username || ''}
+              onChange={e => handleChange('username', e.target.value)}
+              className='mt-1 block w-full border border-gray-300 rounded-md p-2'
+            />
+          </div>
           {/* Sensitive Fields: Only visible in edit mode */}
           {isOwner && (
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
@@ -155,6 +167,9 @@ const PersonalInfoSection = ({
           </p>
           <p className='text-base'>
             <strong>Last Name:</strong> {personalInfo.lastName}
+          </p>
+          <p className='text-base'>
+            <strong>Username:</strong> {personalInfo.username}
           </p>
           {/* Sensitive info hidden in read-only mode */}
           <p className='text-base'>
