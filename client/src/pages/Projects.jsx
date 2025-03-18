@@ -411,7 +411,8 @@ function ProjectCard({ project }) {
               <hr className='my-2' />
               <button
                 onClick={handleRoleClick}
-                className='bg-blue-600 text-white rounded-md px-4 py-2 text-sm shadow hover:bg-blue-700 transition-colors'
+                className='text-white rounded-md px-4 py-2 text-sm shadow hover:bg-blue-700 transition-colors'
+                style={{ backgroundColor: '#0046b0' }}
               >
                 {project.technicalRole}
               </button>

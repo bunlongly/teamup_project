@@ -30,7 +30,8 @@ function HomePage() {
       <div className='sticky top-0 z-50 bg-white p-4 shadow mb-4'>
         <button
           onClick={() => navigate('/projects/create')}
-          className='w-full p-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors'
+          className='w-full p-3 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors'
+          style={{ backgroundColor: '#0046b0' }}
         >
           What's on your mind?
         </button>
