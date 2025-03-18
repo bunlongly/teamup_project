@@ -1,15 +1,12 @@
+// HomePage.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import fallbackLogo from '../assets/logo.png';
-
-/**
- * Example avatar fallback if user has no avatarUrl.
- * You can replace with your own fallback image or logic.
- */
-const fallbackAvatar = fallbackLogo;
+import fallbackAvatar from '../assets/logo.png'; // fallback avatar
 
 function HomePage() {
+  const navigate = useNavigate();
   const [statusPosts, setStatusPosts] = useState([]);
 
   useEffect(() => {
@@ -29,8 +26,18 @@ function HomePage() {
 
   return (
     <div className='container mx-auto px-4 py-6'>
+      {/* Sticky Create Post Button */}
+      <div className='sticky top-0 z-50 bg-white p-4 shadow mb-4'>
+        <button
+          onClick={() => navigate('/projects/create')}
+          className='w-full p-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors'
+        >
+          What's on your mind?
+        </button>
+      </div>
+
       <div className='grid grid-cols-12 gap-6'>
-        {/* LEFT / MAIN FEED */}
+        {/* Main Feed */}
         <div className='col-span-12 md:col-span-8 space-y-4'>
           {statusPosts.length === 0 ? (
             <p className='text-gray-500'>No status posts to display.</p>
@@ -40,8 +47,7 @@ function HomePage() {
             ))
           )}
         </div>
-
-        {/* RIGHT SIDEBAR */}
+        {/* Right Sidebar */}
         <div className='col-span-12 md:col-span-4 space-y-4'>
           <ConnectionRequestPanel />
           <ConnectionSuggestPanel />
@@ -51,17 +57,13 @@ function HomePage() {
   );
 }
 
-/**
- * A card component that displays a STATUS post.
- */
 function StatusPostCard({ post }) {
   const user = post.user || {};
 
   return (
     <div className='bg-white rounded-lg shadow p-4'>
-      {/* Header: User info + maybe "..." menu */}
+      {/* Header: User info and menu */}
       <div className='flex justify-between items-start mb-3'>
-        {/* User avatar + name/role */}
         <div className='flex items-center'>
           <img
             src={user.imageUrl || fallbackAvatar}
@@ -69,7 +71,7 @@ function StatusPostCard({ post }) {
             className='w-10 h-10 rounded-full object-cover mr-3'
           />
           <div>
-            <p className='text-sm font-semibold text-gray-700 leading-tight'>
+            <p className='text-sm font-semibold text-gray-700'>
               {user.firstName} {user.lastName}
             </p>
             <p className='text-xs text-gray-500'>
@@ -77,7 +79,7 @@ function StatusPostCard({ post }) {
             </p>
           </div>
         </div>
-        {/* Optional: Dots menu */}
+        {/* Optional dots menu */}
         <button className='text-gray-400 hover:text-gray-600'>
           <svg
             className='w-5 h-5'
@@ -92,11 +94,8 @@ function StatusPostCard({ post }) {
           </svg>
         </button>
       </div>
-
-      {/* Post text content */}
+      {/* Post content */}
       <p className='text-gray-800 text-sm mb-3'>{post.content}</p>
-
-      {/* If there's an image in the post (e.g., post.fileUrl), display it */}
       {post.fileUrl && (
         <div className='mb-3'>
           <img
@@ -106,8 +105,7 @@ function StatusPostCard({ post }) {
           />
         </div>
       )}
-
-      {/* Footer: e.g., like/comment/share buttons */}
+      {/* Footer: Social actions */}
       <div className='mt-3 flex space-x-4 text-gray-500 text-sm'>
         <button className='flex items-center space-x-1 hover:text-blue-500'>
           <svg
@@ -170,30 +168,17 @@ StatusPostCard.propTypes = {
     user: PropTypes.shape({
       firstName: PropTypes.string,
       lastName: PropTypes.string,
-      role: PropTypes.string,
-      avatarUrl: PropTypes.string
+      jobTitle: PropTypes.string,
+      imageUrl: PropTypes.string
     })
   }).isRequired
 };
 
-/**
- * Example Connection Request panel on the right side.
- * Hard-coded sample users for demonstration.
- */
 function ConnectionRequestPanel() {
+  // Hard-coded sample data
   const requests = [
-    {
-      id: '1',
-      avatarUrl: fallbackAvatar,
-      name: 'Peter',
-      role: 'Business'
-    },
-    {
-      id: '2',
-      avatarUrl: fallbackAvatar,
-      name: 'Jane',
-      role: 'Developer'
-    }
+    { id: '1', avatarUrl: fallbackAvatar, name: 'Peter', role: 'Business' },
+    { id: '2', avatarUrl: fallbackAvatar, name: 'Jane', role: 'Developer' }
   ];
 
   return (
@@ -226,29 +211,16 @@ function ConnectionRequestPanel() {
   );
 }
 
-/**
- * Example Connection Suggest panel on the right side.
- * Hard-coded sample suggestions for demonstration.
- */
 function ConnectionSuggestPanel() {
+  // Hard-coded sample data
   const suggestions = [
-    {
-      id: '3',
-      avatarUrl: fallbackAvatar,
-      name: 'Alex',
-      role: 'Business'
-    },
-    {
-      id: '4',
-      avatarUrl: fallbackAvatar,
-      name: 'Maria',
-      role: 'Designer'
-    }
+    { id: '3', avatarUrl: fallbackAvatar, name: 'Alex', role: 'Business' },
+    { id: '4', avatarUrl: fallbackAvatar, name: 'Maria', role: 'Designer' }
   ];
 
   return (
     <div className='bg-white rounded-lg shadow p-4'>
-      <h3 className='text-md font-semibold mb-3'>Connection Suggests</h3>
+      <h3 className='text-md font-semibold mb-3'>Connection Suggestions</h3>
       {suggestions.map(user => (
         <div key={user.id} className='flex items-center justify-between mb-3'>
           <div className='flex items-center space-x-2'>
