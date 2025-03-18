@@ -46,22 +46,22 @@ function HomePage() {
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className='container mx-auto px-4 py-6'>
       {/* Sticky Create Post Button */}
-      <div className="sticky top-0 z-50 bg-white p-4 shadow mb-4">
+      <div className='sticky top-0 z-50 bg-white p-4 shadow mb-4'>
         <button
           onClick={() => navigate('/posts/create')}
-          className="w-full p-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors"
+          className='w-full p-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors'
         >
           What's on your mind?
         </button>
       </div>
 
-      <div className="grid grid-cols-12 gap-6">
+      <div className='grid grid-cols-12 gap-6'>
         {/* Main Feed */}
-        <div className="col-span-12 md:col-span-8 space-y-4">
+        <div className='col-span-12 md:col-span-8 space-y-4'>
           {statusPosts.length === 0 ? (
-            <p className="text-gray-500">No status posts to display.</p>
+            <p className='text-gray-500'>No status posts to display.</p>
           ) : (
             statusPosts.map(post => (
               <StatusPostCard key={post.id} post={post} />
@@ -69,7 +69,7 @@ function HomePage() {
           )}
         </div>
         {/* Right Sidebar */}
-        <div className="col-span-12 md:col-span-4 space-y-4">
+        <div className='col-span-12 md:col-span-4 space-y-4'>
           <ConnectionRequestPanel />
           <ConnectionSuggestPanel />
         </div>
@@ -79,102 +79,108 @@ function HomePage() {
 }
 
 function StatusPostCard({ post }) {
+  const navigate = useNavigate();
   const user = post.user || {};
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className='bg-white rounded-lg shadow p-4'>
       {/* Header: User info and menu */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center">
+      <div className='flex justify-between items-start mb-3'>
+        <div className='flex items-center'>
           <img
             src={user.imageUrl || fallbackAvatar}
-            alt="User Avatar"
-            className="w-10 h-10 rounded-full object-cover mr-3"
+            alt='User Avatar'
+            className='w-10 h-10 rounded-full object-cover mr-3 cursor-pointer'
+            onClick={() => {
+              if (user.id) {
+                navigate(`/profile/${user.id}`);
+              }
+            }}
           />
           <div>
-            <p className="text-sm font-semibold text-gray-700">
+            <p className='text-sm font-semibold text-gray-700'>
               {user.firstName} {user.lastName}
             </p>
-            <p className="text-xs text-gray-500">
+            <p className='text-xs text-gray-500'>
               {user.jobTitle || 'Community Member'} •{' '}
               {post.createdAt ? formatTimeAgo(post.createdAt) : ''}
             </p>
           </div>
         </div>
         {/* Optional: Dots menu */}
-        <button className="text-gray-400 hover:text-gray-600">
+        <button className='text-gray-400 hover:text-gray-600'>
           <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+            className='w-5 h-5'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            viewBox='0 0 24 24'
           >
-            <circle cx="12" cy="5" r="1" />
-            <circle cx="12" cy="12" r="1" />
-            <circle cx="12" cy="19" r="1" />
+            <circle cx='12' cy='5' r='1' />
+            <circle cx='12' cy='12' r='1' />
+            <circle cx='12' cy='19' r='1' />
           </svg>
         </button>
       </div>
 
       {/* Post content */}
-      <p className="text-gray-800 text-sm mb-3">{post.content}</p>
+      <p className='text-gray-800 text-sm mb-3'>{post.content}</p>
       {post.fileUrl && (
-        <div className="mb-3">
+        <div className='mb-3'>
           <img
             src={post.fileUrl}
-            alt="Post Media"
-            className="w-full h-auto rounded-md"
+            alt='Post Media'
+            className='w-full h-auto rounded-md'
           />
         </div>
       )}
 
       {/* Footer: Social actions */}
-      <div className="mt-3 flex space-x-4 text-gray-500 text-sm">
-        <button className="flex items-center space-x-1 hover:text-blue-500">
+      <div className='mt-3 flex space-x-4 text-gray-500 text-sm'>
+        <button className='flex items-center space-x-1 hover:text-blue-500'>
           <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            viewBox='0 0 24 24'
           >
             <path
-              d="M14 9l-2 2-2-2m2 2l2 2-2 2m4-4h6m-6 4h6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              d='M14 9l-2 2-2-2m2 2l2 2-2 2m4-4h6m-6 4h6'
+              strokeLinecap='round'
+              strokeLinejoin='round'
             />
           </svg>
           <span>Like</span>
         </button>
-        <button className="flex items-center space-x-1 hover:text-blue-500">
+        <button className='flex items-center space-x-1 hover:text-blue-500'>
           <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            viewBox='0 0 24 24'
           >
             <path
-              d="M7 8h10M7 12h6m-6 4h4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              d='M7 8h10M7 12h6m-6 4h4'
+              strokeLinecap='round'
+              strokeLinejoin='round'
             />
           </svg>
           <span>Comment</span>
         </button>
-        <button className="flex items-center space-x-1 hover:text-blue-500">
+        <button className='flex items-center space-x-1 hover:text-blue-500'>
           <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
+            className='w-4 h-4'
+            fill='none'
+            stroke='currentColor'
+            strokeWidth='2'
+            viewBox='0 0 24 24'
           >
             <path
-              d="M15 10l4.553-4.553A2 2 0 0016.553 3H7a2 2 0 00-2 2v14l4-4h3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              d='M15 10l4.553-4.553A2 2 0 0016.553 3H7a2 2 0 00-2 2v14l4-4h3'
+              strokeLinecap='round'
+              strokeLinejoin='round'
             />
           </svg>
           <span>Share</span>
@@ -207,26 +213,26 @@ function ConnectionRequestPanel() {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-md font-semibold mb-3">Connection Requests</h3>
+    <div className='bg-white rounded-lg shadow p-4'>
+      <h3 className='text-md font-semibold mb-3'>Connection Requests</h3>
       {requests.map(user => (
-        <div key={user.id} className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
+        <div key={user.id} className='flex items-center justify-between mb-3'>
+          <div className='flex items-center space-x-2'>
             <img
               src={user.avatarUrl}
-              alt="User Avatar"
-              className="w-8 h-8 rounded-full object-cover"
+              alt='User Avatar'
+              className='w-8 h-8 rounded-full object-cover'
             />
             <div>
-              <p className="text-sm font-medium text-gray-700">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.role}</p>
+              <p className='text-sm font-medium text-gray-700'>{user.name}</p>
+              <p className='text-xs text-gray-500'>{user.role}</p>
             </div>
           </div>
-          <div className="space-x-1">
-            <button className="px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white">
+          <div className='space-x-1'>
+            <button className='px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white'>
               Confirm
             </button>
-            <button className="px-2 py-1 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-100">
+            <button className='px-2 py-1 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-100'>
               Delete
             </button>
           </div>
@@ -244,22 +250,22 @@ function ConnectionSuggestPanel() {
   ];
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="text-md font-semibold mb-3">Connection Suggestions</h3>
+    <div className='bg-white rounded-lg shadow p-4'>
+      <h3 className='text-md font-semibold mb-3'>Connection Suggestions</h3>
       {suggestions.map(user => (
-        <div key={user.id} className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
+        <div key={user.id} className='flex items-center justify-between mb-3'>
+          <div className='flex items-center space-x-2'>
             <img
               src={user.avatarUrl}
-              alt="User Avatar"
-              className="w-8 h-8 rounded-full object-cover"
+              alt='User Avatar'
+              className='w-8 h-8 rounded-full object-cover'
             />
             <div>
-              <p className="text-sm font-medium text-gray-700">{user.name}</p>
-              <p className="text-xs text-gray-500">{user.role}</p>
+              <p className='text-sm font-medium text-gray-700'>{user.name}</p>
+              <p className='text-xs text-gray-500'>{user.role}</p>
             </div>
           </div>
-          <button className="px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white">
+          <button className='px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white'>
             Follow
           </button>
         </div>
@@ -267,6 +273,5 @@ function ConnectionSuggestPanel() {
     </div>
   );
 }
-
 
 export default HomePage;

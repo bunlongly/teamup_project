@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ConnectionButton from '../components/ ConnectionButton.jsx';
 
 import PersonalInfoSection from './PersonalInfoSection.jsx';
 import EducationSection from './EducationSection.jsx';
@@ -375,6 +376,13 @@ function Profile() {
               Contact info: {personalInfo.email}
             </p>
           </div>
+          {/* Show ConnectionButton only if the current user is not the profile owner */}
+          {personalInfo.id &&
+            personalInfo.id !== localStorage.getItem('userId') && (
+              <div className='mt-4'>
+                <ConnectionButton profileUserId={personalInfo.id} />
+              </div>
+            )}
         </div>
       </div>
 

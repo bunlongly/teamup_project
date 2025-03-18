@@ -6,7 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
-import connectionRoutes from './routes/connectionRoute.js'
+import connectionRoutes from './routes/connectionRoutes.js'
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
 
 dotenv.config();
