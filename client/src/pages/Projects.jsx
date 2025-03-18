@@ -325,9 +325,9 @@ function ProjectCard({ project }) {
         {/* Left: Project image (displayed as a circle) */}
         <div className='w-1/5 flex flex-col items-center justify-center space-y-2'>
           {/* Image */}
-          {project.fileUrl ? (
+          {project.user.imageUrl ? (
             <img
-              src={project.fileUrl}
+              src={project.user.imageUrl}
               alt='Project'
               className='w-16 h-16 rounded-full object-cover'
             />
@@ -441,7 +441,8 @@ ProjectCard.propTypes = {
       firstName: PropTypes.string,
       lastName: PropTypes.string,
       username: PropTypes.string,
-      avatarUrl: PropTypes.string
+      avatarUrl: PropTypes.string,
+      imageUrl: PropTypes.string
     })
   }).isRequired
 };

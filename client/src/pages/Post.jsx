@@ -1,12 +1,12 @@
 // CreatePostPage.jsx
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { AnimatePresence, motion } from 'framer-motion';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Options for dropdowns
+// Example dropdown options for projectType
 const projectTypeOptions = [
   'E-commerce',
   'Web Development',
@@ -14,34 +14,36 @@ const projectTypeOptions = [
   'Other'
 ];
 
+// The three post types
 const postTypes = ['STATUS', 'RECRUITMENT', 'PROJECT_SEEKING'];
 
 function CreatePostPage() {
   const navigate = useNavigate();
 
-  // State for selected post type and form fields
+  // Track which post type is currently selected
   const [postType, setPostType] = useState('STATUS');
+
+  // Form data (fields differ by post type)
   const [formData, setFormData] = useState({
-    // For status posts
+    // For STATUS posts
     content: '',
-    // For recruitment/project seeking posts
+
+    // For RECRUITMENT / PROJECT_SEEKING posts
     projectName: '',
     projectDescription: '',
-    projectType: '', // e.g., E-commerce, etc.
-    platform: '', // e.g., Web Development, Mobile Development, Other
-    technicalRole: '', // e.g., Frontend, Backend, Full Stack, Other
+    projectType: '', // e.g., E-commerce
+    platform: '', // e.g., Web Development
+    technicalRole: '', // e.g., Frontend / Backend / Full Stack
     duration: '',
     startDate: '',
     endDate: '',
     requirement: '',
-    // File upload (optional)
+
+    // Optional file upload
     file: null
   });
 
-  // State for previewing the uploaded file
-  const [previewImage, setPreviewImage] = useState(null);
-
-  // When switching post types, reset non-relevant fields and clear file preview
+  // Switch post type, reset irrelevant fields
   const handlePostTypeChange = type => {
     setPostType(type);
     setFormData({
@@ -57,29 +59,21 @@ function CreatePostPage() {
       requirement: '',
       file: null
     });
-    setPreviewImage(null);
   };
 
-  // Handle input changes (for text and file inputs)
+  // Handle text/file changes
   const handleChange = e => {
     const { name, value, files } = e.target;
     if (files) {
-      setFormData(prev => ({
-        ...prev,
-        [name]: files[0]
-      }));
-      if (name === 'file') {
-        setPreviewImage(URL.createObjectURL(files[0]));
-      }
+      // For file inputs
+      setFormData(prev => ({ ...prev, [name]: files[0] }));
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  // Automatically calculate duration when both startDate and endDate are set
+  // Automatically compute duration if it's RECRUITMENT / PROJECT_SEEKING
+  // and both startDate & endDate are set
   useEffect(() => {
     if (
       (postType === 'RECRUITMENT' || postType === 'PROJECT_SEEKING') &&
@@ -89,6 +83,7 @@ function CreatePostPage() {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
       const diffInDays = Math.floor((end - start) / (1000 * 60 * 60 * 24));
+
       let durationStr = '';
       if (diffInDays < 7) {
         durationStr = `${diffInDays} day${diffInDays !== 1 ? 's' : ''}`;
@@ -109,16 +104,19 @@ function CreatePostPage() {
     }
   }, [formData.startDate, formData.endDate, postType]);
 
-  // Handle form submission
+  // Submit form
   const handleSubmit = async e => {
     e.preventDefault();
     const data = new FormData();
+
+    // Always append postType
     data.append('postType', postType);
 
+    // If STATUS, just append content
     if (postType === 'STATUS') {
       data.append('content', formData.content);
     } else {
-      // For both RECRUITMENT and PROJECT_SEEKING posts, append all fields
+      // RECRUITMENT or PROJECT_SEEKING
       data.append('projectName', formData.projectName);
       data.append('projectDescription', formData.projectDescription);
       data.append('projectType', formData.projectType);
@@ -130,11 +128,13 @@ function CreatePostPage() {
       data.append('requirement', formData.requirement);
     }
 
+    // If file is selected, append it
     if (formData.file) {
       data.append('file', formData.file);
     }
 
     try {
+      // Use token if needed
       const token = localStorage.getItem('token');
       const response = await axios.post(
         'http://localhost:5200/api/post/create',
@@ -147,12 +147,21 @@ function CreatePostPage() {
         }
       );
       console.log('Post created:', response.data);
+
       toast.success('Post created successfully!', {
         position: 'top-right',
         autoClose: 2000
       });
+
+      // Navigate conditionally after a short delay to show toast
       setTimeout(() => {
-        navigate('/posts');
+        if (postType === 'STATUS') {
+          // Go to home (adjust route as needed)
+          navigate('/');
+        } else {
+          // Go to projects page
+          navigate('/projects');
+        }
       }, 2000);
     } catch (error) {
       console.error('Error creating post:', error);
@@ -163,14 +172,14 @@ function CreatePostPage() {
     }
   };
 
-  // For the sliding effect, determine the current index based on postTypes
+  // For the stepper animation
   const currentIndex = postTypes.indexOf(postType);
 
   return (
     <div className='container mx-auto p-6'>
       <h1 className='text-2xl font-bold mb-4'>Create Post</h1>
 
-      {/* Tab Buttons for Post Types */}
+      {/* Post Type Tabs */}
       <div className='mb-6 flex space-x-4'>
         {postTypes.map(type => (
           <button
@@ -192,7 +201,7 @@ function CreatePostPage() {
         ))}
       </div>
 
-      {/* Progress Stepper */}
+      {/* Stepper */}
       <div className='mb-6 flex items-center justify-center'>
         {postTypes.map((type, index) => (
           <div key={type} className='flex items-center'>
@@ -212,7 +221,7 @@ function CreatePostPage() {
         ))}
       </div>
 
-      {/* Card Container for the Form with Sliding Animation */}
+      {/* Form Card */}
       <div className='bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto'>
         <form
           onSubmit={handleSubmit}
@@ -249,7 +258,7 @@ function CreatePostPage() {
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {/* Start & End Dates in the same line */}
+                {/* Start & End Dates (same line) */}
                 <div className='flex space-x-4'>
                   <div className='w-1/2'>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -277,7 +286,7 @@ function CreatePostPage() {
                   </div>
                 </div>
 
-                {/* Computed Duration on next line */}
+                {/* Computed Duration */}
                 <div className='mt-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
                     Duration
@@ -319,7 +328,7 @@ function CreatePostPage() {
                   />
                 </div>
 
-                {/* Additional dropdown fields */}
+                {/* Additional fields: projectType, platform, technicalRole */}
                 <div className='flex space-x-4 mt-4'>
                   <div className='w-1/3'>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -379,7 +388,7 @@ function CreatePostPage() {
                   </div>
                 </div>
 
-                {/* Requirement field */}
+                {/* Requirement */}
                 <div className='mt-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
                     Requirement
@@ -397,7 +406,7 @@ function CreatePostPage() {
             )}
           </AnimatePresence>
 
-          {/* File Upload (conditionally hidden for PROJECT_SEEKING if desired) */}
+          {/* File Upload (hide if PROJECT_SEEKING is not supposed to have it) */}
           {postType !== 'PROJECT_SEEKING' && (
             <div className='mt-4'>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
