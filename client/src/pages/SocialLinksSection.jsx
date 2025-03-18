@@ -15,7 +15,8 @@ const SocialLinksSection = ({
   socialLinks,
   setSocialLinks,
   editMode,
-  setEditMode
+  setEditMode,
+  isOwner
 }) => {
   const handleChange = (field, value) => {
     setSocialLinks({ ...socialLinks, [field]: value });
@@ -69,15 +70,17 @@ const SocialLinksSection = ({
     <div className='bg-white rounded-lg shadow p-4'>
       <div className='flex items-center justify-between mb-2'>
         <h3 className='text-lg font-semibold'>Social Links &amp; Portfolio</h3>
-        <button
-          onClick={() => setEditMode(!editMode)}
-          className='text-blue-600 hover:text-blue-800 focus:outline-none'
-          aria-label={
-            editMode ? 'Cancel editing social links' : 'Edit social links'
-          }
-        >
-          <FontAwesomeIcon icon={editMode ? faTimes : faPen} size='lg' />
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className='text-blue-600 hover:text-blue-800 focus:outline-none'
+            aria-label={
+              editMode ? 'Cancel editing social links' : 'Edit social links'
+            }
+          >
+            <FontAwesomeIcon icon={editMode ? faTimes : faPen} size='lg' />
+          </button>
+        )}
       </div>
 
       {/* EDIT MODE */}
@@ -147,6 +150,7 @@ SocialLinksSection.propTypes = {
     portfolio: PropTypes.string
   }).isRequired,
   setSocialLinks: PropTypes.func.isRequired,
+  isOwner: PropTypes.bool.isRequired,
   editMode: PropTypes.bool.isRequired,
   setEditMode: PropTypes.func.isRequired
 };

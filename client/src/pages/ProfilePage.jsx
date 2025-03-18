@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ConnectionButton from '../components/ConnectionButton.jsx'; // Removed extra space in path
+import ConnectionButton from '../components/ConnectionButton.jsx';
 
 import PersonalInfoSection from './PersonalInfoSection.jsx';
 import EducationSection from './EducationSection.jsx';
@@ -18,9 +18,13 @@ import { faCamera } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
   const navigate = useNavigate();
-  const { id: profileId } = useParams(); // Get the profile id from the URL (if any)
+  const { id: profileId } = useParams(); // Get profile id from URL if available
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
+
+  // Determine if the current user is the profile owner.
+  // If there's no profileId in URL or profileId matches current user's id, then it's the owner.
+  const isOwner = !profileId || profileId === currentUserId;
 
   // States for images
   const [profilePicture, setProfilePicture] = useState(null);
@@ -75,7 +79,7 @@ function Profile() {
         navigate('/login');
         return;
       }
-      // Use the profileId from the URL if provided, otherwise use the current user's id.
+      // Use profileId from URL if provided; otherwise, use current user's id.
       const userIdToFetch = profileId || currentUserId;
       if (!userIdToFetch) {
         try {
@@ -90,9 +94,7 @@ function Profile() {
       try {
         const response = await axios.get(
           `http://localhost:5200/api/user/${userIdToFetch}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const userData = response.data.data;
         console.log('Fetched user data:', userData);
@@ -178,7 +180,7 @@ function Profile() {
     }
   };
 
-  // Global update profile handler (only for the current user's profile)
+  // Global update profile handler (only for current user's profile)
   const handleUpdateProfile = async () => {
     console.log('Update button clicked.');
     if (!token) {
@@ -186,7 +188,7 @@ function Profile() {
       navigate('/login');
       return;
     }
-    const userIdToUpdate = currentUserId; // Only allow the current user to update their own profile
+    const userIdToUpdate = currentUserId; // only allow the current user to update their own profile
     const transformedExperience = experience.map(exp => ({
       ...exp,
       position: exp.title
@@ -222,7 +224,6 @@ function Profile() {
       );
       console.log('Profile updated:', response.data);
       const updatedUser = response.data.data;
-      // Update state with returned data
       setPersonalInfo({
         id: updatedUser.id || '',
         firstName: updatedUser.firstName,
@@ -298,18 +299,23 @@ function Profile() {
             <p className='ml-2 text-gray-600'>Click to add cover photo</p>
           </div>
         )}
-        <input
-          type='file'
-          id='coverPhotoInput'
-          style={{ display: 'none' }}
-          onChange={handleCoverPhotoChange}
-        />
-        <button
-          className='absolute top-2 right-2 px-3 py-1 bg-white text-sm text-gray-700 shadow'
-          onClick={() => document.getElementById('coverPhotoInput').click()}
-        >
-          Change Cover
-        </button>
+        {/* Only show cover photo change button if owner */}
+        {isOwner && (
+          <>
+            <input
+              type='file'
+              id='coverPhotoInput'
+              style={{ display: 'none' }}
+              onChange={handleCoverPhotoChange}
+            />
+            <button
+              className='absolute top-2 right-2 px-3 py-1 bg-white text-sm text-gray-700 shadow'
+              onClick={() => document.getElementById('coverPhotoInput').click()}
+            >
+              Change Cover
+            </button>
+          </>
+        )}
       </div>
 
       {/* Profile Picture + Basic Info */}
@@ -330,20 +336,25 @@ function Profile() {
               />
             </div>
           )}
-          <input
-            type='file'
-            id='profilePictureInput'
-            style={{ display: 'none' }}
-            onChange={handleProfilePictureChange}
-          />
-          <button
-            className='absolute bottom-0 right-0 bg-white px-2 py-1 text-sm shadow'
-            onClick={() =>
-              document.getElementById('profilePictureInput').click()
-            }
-          >
-            Change
-          </button>
+          {/* Only show profile picture change if owner */}
+          {isOwner && (
+            <>
+              <input
+                type='file'
+                id='profilePictureInput'
+                style={{ display: 'none' }}
+                onChange={handleProfilePictureChange}
+              />
+              <button
+                className='absolute bottom-0 right-0 bg-white px-2 py-1 text-sm shadow'
+                onClick={() =>
+                  document.getElementById('profilePictureInput').click()
+                }
+              >
+                Change
+              </button>
+            </>
+          )}
         </div>
         <div className='mt-10 md:mt-10 md:ml-6 flex-1'>
           <h1 className='text-2xl font-bold'>
@@ -364,7 +375,7 @@ function Profile() {
               Contact info: {personalInfo.email}
             </p>
           </div>
-          {/* Render ConnectionButton only if the profile being viewed does not belong to the current user */}
+          {/* Render ConnectionButton only if not owner */}
           {personalInfo.id && personalInfo.id !== currentUserId && (
             <div className='mt-4'>
               <ConnectionButton profileUserId={personalInfo.id} />
@@ -377,7 +388,6 @@ function Profile() {
       <div className='mt-6 px-4 md:px-8 grid grid-cols-12 gap-4'>
         {/* LEFT COLUMN */}
         <div className='col-span-12 md:col-span-8 space-y-4'>
-          {/* Personal Info Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <PersonalInfoSection
               personalInfo={personalInfo}
@@ -386,10 +396,9 @@ function Profile() {
               setEditMode={flag =>
                 setEditMode(prev => ({ ...prev, personal: flag }))
               }
-              isOwner={true}
+              isOwner={isOwner}
             />
           </div>
-          {/* Education Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <EducationSection
               education={education}
@@ -398,9 +407,9 @@ function Profile() {
               setEditMode={flag =>
                 setEditMode(prev => ({ ...prev, education: flag }))
               }
+              isOwner={isOwner}
             />
           </div>
-          {/* Experience Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <ExperienceSection
               experience={experience}
@@ -409,9 +418,9 @@ function Profile() {
               setEditMode={flag =>
                 setEditMode(prev => ({ ...prev, experience: flag }))
               }
+              isOwner={isOwner}
             />
           </div>
-          {/* Skills Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <SkillsSection
               skills={skills}
@@ -420,13 +429,13 @@ function Profile() {
               setEditMode={flag =>
                 setEditMode(prev => ({ ...prev, skills: flag }))
               }
+              isOwner={isOwner}
             />
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
         <div className='col-span-12 md:col-span-4 space-y-4'>
-          {/* Profile URL Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <h3 className='text-lg font-semibold mb-2'>Profile URL</h3>
             <p className='text-sm text-gray-500'>
@@ -441,8 +450,6 @@ function Profile() {
               https://yourdomain.com/profile/{personalInfo.username}
             </a>
           </div>
-
-          {/* Social Links Section */}
           <div className='bg-white rounded-lg shadow p-4'>
             <SocialLinksSection
               socialLinks={socialLinks}
@@ -451,10 +458,9 @@ function Profile() {
               setEditMode={flag =>
                 setEditMode(prev => ({ ...prev, social: flag }))
               }
+              isOwner={isOwner}
             />
           </div>
-
-          {/* Additional Right Column Content */}
           <div className='bg-white rounded-lg shadow p-4'>
             <h3 className='text-lg font-semibold mb-2'>Connection Suggest</h3>
             <p className='text-sm text-gray-500'>
@@ -464,15 +470,17 @@ function Profile() {
         </div>
       </div>
 
-      {/* Footer Update Button */}
-      <div className='px-4 md:px-8 mt-6 mb-10'>
-        <button
-          onClick={handleUpdateProfile}
-          className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow'
-        >
-          Update Profile
-        </button>
-      </div>
+      {/* Footer Update Button (only for owner) */}
+      {isOwner && (
+        <div className='px-4 md:px-8 mt-6 mb-10'>
+          <button
+            onClick={handleUpdateProfile}
+            className='bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded shadow'
+          >
+            Update Profile
+          </button>
+        </div>
+      )}
 
       <ToastContainer
         position='top-right'

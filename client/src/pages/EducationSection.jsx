@@ -6,7 +6,8 @@ const EducationSection = ({
   education,
   setEducation,
   editMode,
-  setEditMode
+  setEditMode,
+  isOwner
 }) => {
   const handleEducationChange = (index, field, value) => {
     const newEducation = [...education];
@@ -29,12 +30,14 @@ const EducationSection = ({
     <div className='education-section bg-white rounded-lg shadow p-4'>
       <div className='flex items-center justify-between mb-4'>
         <h3 className='text-xl font-bold'>Education</h3>
-        <button
-          onClick={() => setEditMode(!editMode)}
-          className='text-blue-600 hover:text-blue-800'
-        >
-          <FontAwesomeIcon icon={editMode ? faTimes : faPen} size='lg' />
-        </button>
+        {isOwner && (
+          <button
+            onClick={() => setEditMode(!editMode)}
+            className='text-blue-600 hover:text-blue-800'
+          >
+            <FontAwesomeIcon icon={editMode ? faTimes : faPen} size='lg' />
+          </button>
+        )}
       </div>
       {education.map((edu, index) => (
         <div
@@ -149,7 +152,8 @@ EducationSection.propTypes = {
   ).isRequired,
   setEducation: PropTypes.func.isRequired,
   editMode: PropTypes.bool.isRequired,
-  setEditMode: PropTypes.func.isRequired
+  setEditMode: PropTypes.func.isRequired,
+  isOwner: PropTypes.bool.isRequired
 };
 
 export default EducationSection;
