@@ -16,7 +16,7 @@ import CandidatePage from './pages/CandidatesPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token'); // Check localStorage instead of cookies
+  const token = localStorage.getItem('token'); 
   console.log('Token:', token);
 
   if (!token) {

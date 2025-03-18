@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+// Profile.jsx
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import ConnectionButton from '../components/ ConnectionButton.jsx';
+import ConnectionButton from '../components/ConnectionButton.jsx'; // Removed extra space in path
 
 import PersonalInfoSection from './PersonalInfoSection.jsx';
 import EducationSection from './EducationSection.jsx';
@@ -17,6 +18,9 @@ import { faCamera } from '@fortawesome/free-solid-svg-icons';
 
 function Profile() {
   const navigate = useNavigate();
+  const { id: profileId } = useParams(); // Get the profile id from the URL (if any)
+  const token = localStorage.getItem('token');
+  const currentUserId = localStorage.getItem('userId');
 
   // States for images
   const [profilePicture, setProfilePicture] = useState(null);
@@ -31,6 +35,7 @@ function Profile() {
 
   // State for personal info (from User model)
   const [personalInfo, setPersonalInfo] = useState({
+    id: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -62,21 +67,20 @@ function Profile() {
     social: false
   });
 
-  // On mount, fetch profile data
+  // Fetch profile data on mount or when profileId changes
   useEffect(() => {
     const fetchUserData = async () => {
-      const token = localStorage.getItem('token');
       if (!token) {
         console.error('Token is missing. Please log in.');
         navigate('/login');
         return;
       }
-      let userId = localStorage.getItem('userId');
-      if (!userId) {
+      // Use the profileId from the URL if provided, otherwise use the current user's id.
+      const userIdToFetch = profileId || currentUserId;
+      if (!userIdToFetch) {
         try {
           const decoded = jwtDecode(token);
-          userId = decoded.userId;
-          localStorage.setItem('userId', userId);
+          localStorage.setItem('userId', decoded.userId);
         } catch (err) {
           console.error('Error decoding token:', err);
           navigate('/login');
@@ -85,14 +89,17 @@ function Profile() {
       }
       try {
         const response = await axios.get(
-          `http://localhost:5200/api/user/${userId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          `http://localhost:5200/api/user/${userIdToFetch}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
         );
         const userData = response.data.data;
-        console.log(userData);
+        console.log('Fetched user data:', userData);
 
         // Set personal info fields
         setPersonalInfo({
+          id: userData.id || '',
           firstName: userData.firstName || '',
           lastName: userData.lastName || '',
           email: userData.email || '',
@@ -152,7 +159,7 @@ function Profile() {
     };
 
     fetchUserData();
-  }, [navigate]);
+  }, [profileId, currentUserId, navigate, token]);
 
   // File change handlers
   const handleProfilePictureChange = e => {
@@ -171,68 +178,53 @@ function Profile() {
     }
   };
 
-  // Global update profile handler
+  // Global update profile handler (only for the current user's profile)
   const handleUpdateProfile = async () => {
     console.log('Update button clicked.');
-    const token = localStorage.getItem('token');
     if (!token) {
       console.error('Token is missing. Please log in.');
       navigate('/login');
       return;
     }
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-      try {
-        const decoded = jwtDecode(token);
-        userId = decoded.userId;
-        localStorage.setItem('userId', userId);
-      } catch (err) {
-        console.error('Error decoding token:', err);
-        navigate('/login');
-        return;
-      }
-    }
-
-    // Transform experience to include required "position" field
+    const userIdToUpdate = currentUserId; // Only allow the current user to update their own profile
     const transformedExperience = experience.map(exp => ({
       ...exp,
       position: exp.title
     }));
-
-    // Create FormData and append all fields and files
-    const formData = new FormData();
-    formData.append('firstName', personalInfo.firstName);
-    formData.append('lastName', personalInfo.lastName);
-    formData.append('email', personalInfo.email);
-    formData.append('username', personalInfo.username);
-    formData.append('phoneNumber', personalInfo.phoneNumber);
-    formData.append('dateOfBirth', personalInfo.dateOfBirth);
-    formData.append('location', personalInfo.location);
-    formData.append('jobTitle', personalInfo.jobTitle);
-    formData.append('bio', personalInfo.bio);
-    formData.append('description', personalInfo.description);
-    formData.append('socialLinks', JSON.stringify(socialLinks));
-    formData.append('education', JSON.stringify(education));
-    formData.append('experience', JSON.stringify(transformedExperience));
-    formData.append('skills', JSON.stringify(skills));
+    const formDataToSend = new FormData();
+    formDataToSend.append('firstName', personalInfo.firstName);
+    formDataToSend.append('lastName', personalInfo.lastName);
+    formDataToSend.append('email', personalInfo.email);
+    formDataToSend.append('username', personalInfo.username);
+    formDataToSend.append('phoneNumber', personalInfo.phoneNumber);
+    formDataToSend.append('dateOfBirth', personalInfo.dateOfBirth);
+    formDataToSend.append('location', personalInfo.location);
+    formDataToSend.append('jobTitle', personalInfo.jobTitle);
+    formDataToSend.append('bio', personalInfo.bio);
+    formDataToSend.append('description', personalInfo.description);
+    formDataToSend.append('socialLinks', JSON.stringify(socialLinks));
+    formDataToSend.append('education', JSON.stringify(education));
+    formDataToSend.append('experience', JSON.stringify(transformedExperience));
+    formDataToSend.append('skills', JSON.stringify(skills));
 
     if (profilePictureFile) {
-      formData.append('imageUrl', profilePictureFile);
+      formDataToSend.append('imageUrl', profilePictureFile);
     }
     if (coverPhotoFile) {
-      formData.append('coverImage', coverPhotoFile);
+      formDataToSend.append('coverImage', coverPhotoFile);
     }
 
     try {
       const response = await axios.put(
-        `http://localhost:5200/api/user/${userId}/edit`,
-        formData,
+        `http://localhost:5200/api/user/${userIdToUpdate}/edit`,
+        formDataToSend,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log('Profile updated:', response.data);
       const updatedUser = response.data.data;
       // Update state with returned data
       setPersonalInfo({
+        id: updatedUser.id || '',
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
         email: updatedUser.email,
@@ -244,9 +236,7 @@ function Profile() {
         bio: updatedUser.bio,
         description: updatedUser.description
       });
-      if (updatedUser.socialLinks) {
-        setSocialLinks(updatedUser.socialLinks);
-      }
+      if (updatedUser.socialLinks) setSocialLinks(updatedUser.socialLinks);
       if (updatedUser.education) setEducation(updatedUser.education);
       if (updatedUser.experience) {
         const mappedExp = updatedUser.experience.map(exp => ({
@@ -360,15 +350,13 @@ function Profile() {
             {personalInfo.firstName} {personalInfo.lastName}
           </h1>
           <p className='text-gray-600'>
-            {personalInfo.username ||
-              'Work at Limkokwing University of Creative Technology'}
+            {personalInfo.username || 'Your username here'}
           </p>
           <p className='text-gray-600'>
-            {personalInfo.jobTitle ||
-              'Work at Limkokwing University of Creative Technology'}
+            {personalInfo.jobTitle || 'Your job title here'}
           </p>
           <p className='text-gray-500'>
-            {personalInfo.location || 'Phnom Penh, Cambodia'}
+            {personalInfo.location || 'Your location here'}
           </p>
           <div className='mt-2'>
             <p className='text-blue-500 font-medium'>50 Connections</p>
@@ -376,19 +364,18 @@ function Profile() {
               Contact info: {personalInfo.email}
             </p>
           </div>
-          {/* Show ConnectionButton only if the current user is not the profile owner */}
-          {personalInfo.id &&
-            personalInfo.id !== localStorage.getItem('userId') && (
-              <div className='mt-4'>
-                <ConnectionButton profileUserId={personalInfo.id} />
-              </div>
-            )}
+          {/* Render ConnectionButton only if the profile being viewed does not belong to the current user */}
+          {personalInfo.id && personalInfo.id !== currentUserId && (
+            <div className='mt-4'>
+              <ConnectionButton profileUserId={personalInfo.id} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Main Content: Two-Column Layout */}
       <div className='mt-6 px-4 md:px-8 grid grid-cols-12 gap-4'>
-        {/* LEFT COLUMN (col-span-8) */}
+        {/* LEFT COLUMN */}
         <div className='col-span-12 md:col-span-8 space-y-4'>
           {/* Personal Info Section */}
           <div className='bg-white rounded-lg shadow p-4'>
@@ -437,7 +424,7 @@ function Profile() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN (col-span-4) */}
+        {/* RIGHT COLUMN */}
         <div className='col-span-12 md:col-span-4 space-y-4'>
           {/* Profile URL Section */}
           <div className='bg-white rounded-lg shadow p-4'>
