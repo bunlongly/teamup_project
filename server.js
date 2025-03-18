@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
+import connectionRoutes from './routes/connectionRoute.js'
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
 
 dotenv.config();
@@ -36,6 +37,7 @@ app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }));
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
+app.use('/api/connection', connectionRoutes);
 
 // Error handling middleware
 app.use(errorHandlerMiddleware);
