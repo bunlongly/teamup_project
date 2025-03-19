@@ -131,13 +131,19 @@ model Post {
 }
 
 
-model Connection {
-  followerId String
-  followingId String
-  createdAt  DateTime @default(now())
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+}
 
-  follower   User  @relation("Following", fields: [followerId], references: [id])
-  following  User  @relation("Followers", fields: [followingId], references: [id])
+model Connection {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  status      ConnectionStatus @default(PENDING)
+
+  follower    User @relation("Following", fields: [followerId], references: [id])
+  following   User @relation("Followers", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
 }
