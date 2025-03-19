@@ -6,6 +6,8 @@ import ProjectManagement from "./components/ProjectManagement";
 import ApplyJob from "./pages/ApplyPage";
 import Profile from "./pages/ProfilePage";
 import CandidatePage from "./pages/CandidatesPage";
+import NetworkPage from "./pages/NetworkPage";
+
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
           <Route path="/apply" element={<ApplyJob />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/candidates" element={<CandidatePage />} />
+          <Route path="/network" element={<NetworkPage />} />
           
         </Routes>
       </div>

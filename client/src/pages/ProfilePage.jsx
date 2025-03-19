@@ -99,8 +99,8 @@ function Profile() {
   };
 
   return (
-    <div className="grid grid-cols-10 w-full mx-auto space-x-8 profile-page-container">
-      <div className="col-span-7 profile-page">
+    <div className="grid grid-cols-1 lg:grid-cols-10 w-full mx-auto space-y-8 lg:space-y-0 lg:space-x-8 profile-page-container">
+      <div className="col-span-1 lg:col-span-7 profile-page">
         <div className="profile-cover-photo" onClick={() => document.getElementById('coverPhotoInput').click()}>
           {coverPhoto ? (
             <img src={coverPhoto} alt="Cover" />
@@ -128,6 +128,9 @@ function Profile() {
             <h3>Education</h3>
             <FontAwesomeIcon icon={faPen} onClick={() => setEditMode({ ...editMode, education: !editMode.education })} className="edit-icon" />
           </div>
+          {editMode.education && (
+            <button onClick={handleAddEducation} className="add-button">Add Education</button>
+          )}
           {education.map((edu, index) => (
             <div key={index} className="profile-education-item">
               {editMode.education ? (
@@ -185,13 +188,15 @@ function Profile() {
               )}
             </div>
           ))}
-          {editMode.education && <button onClick={handleAddEducation}>Add Education</button>}
         </div>
         <div className="profile-experience-section">
           <div className="section-header">
             <h3>Experience</h3>
             <FontAwesomeIcon icon={faPen} onClick={() => setEditMode({ ...editMode, experience: !editMode.experience })} className="edit-icon" />
           </div>
+          {editMode.experience && (
+            <button onClick={handleAddExperience} className="add-button">Add Experience</button>
+          )}
           {experience.map((exp, index) => (
             <div key={index} className="profile-experience-item">
               {editMode.experience ? (
@@ -240,13 +245,15 @@ function Profile() {
               )}
             </div>
           ))}
-          {editMode.experience && <button onClick={handleAddExperience}>Add Experience</button>}
         </div>
         <div className="profile-skills-section">
           <div className="section-header">
             <h3>Skills</h3>
             <FontAwesomeIcon icon={faPen} onClick={() => setEditMode({ ...editMode, skills: !editMode.skills })} className="edit-icon" />
           </div>
+          {editMode.skills && (
+            <button onClick={handleAddSkill} className="add-button">Add Skill</button>
+          )}
           {skills.map((skill, index) => (
             <div key={index} className="profile-skill-item">
               {editMode.skills ? (
@@ -264,7 +271,6 @@ function Profile() {
               )}
             </div>
           ))}
-          {editMode.skills && <button onClick={handleAddSkill}>Add Skill</button>}
         </div>
         <div className="profile-portfolio-link">
           <label>Portfolio Link:</label>
@@ -285,7 +291,7 @@ function Profile() {
           <button onClick={handleUpdateProfile}>Update Profile</button>
         </div>
       </div>
-      <div className="col-span-3 profile-page-right"></div>
+      <div className="col-span-1 lg:col-span-3 profile-page-right"></div>
     </div>
   );
 }
