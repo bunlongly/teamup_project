@@ -109,3 +109,29 @@ export const deleteConnection = async (req, res) => {
     );
   }
 };
+
+
+export const getIncomingConnections = async (req, res) => {
+  const currentUserId = req.user.id || req.user.userId;
+  try {
+    const connections = await prisma.connection.findMany({
+      where: {
+        followingId: currentUserId,
+        status: 'PENDING'
+      },
+      include: {
+        follower: true // include follower details
+      }
+    });
+    // Return the follower information for each connection
+    const requests = connections.map((connection) => connection.follower);
+    return successResponse(res, 'Incoming requests fetched', { requests });
+  } catch (error) {
+    console.error('Error fetching incoming connections:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching incoming connections'
+    );
+  }
+};

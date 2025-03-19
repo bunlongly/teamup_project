@@ -3,7 +3,9 @@ import { Router } from 'express';
 import {
   getConnectionStatus,
   createConnection,
-  deleteConnection
+  deleteConnection,
+  getIncomingConnections,
+  acceptConnection
 } from '../controllers/connectionController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 
@@ -12,5 +14,10 @@ const router = Router();
 router.get('/status/:userId', authenticateUser, getConnectionStatus);
 router.post('/create', authenticateUser, createConnection);
 router.delete('/:userId', authenticateUser, deleteConnection);
+
+router.get('/incoming', authenticateUser, getIncomingConnections);
+
+router.post('/accept', authenticateUser, acceptConnection);
+
 
 export default router;

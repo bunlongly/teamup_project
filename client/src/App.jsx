@@ -13,6 +13,7 @@ import ProjectManagement from './components/ProjectManagement';
 import ApplyJob from './pages/ApplyPage';
 import Profile from './pages/ProfilePage';
 import CandidatePage from './pages/CandidatesPage';
+import NetworkPage from './pages/NetworkPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -47,6 +48,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ProjectManagement />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/network'
+            element={
+              <ProtectedRoute>
+                <NetworkPage />
               </ProtectedRoute>
             }
           />
