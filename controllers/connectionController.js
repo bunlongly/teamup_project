@@ -87,8 +87,8 @@ export const deleteConnection = async (req, res) => {
     const connection = await prisma.connection.delete({
       where: {
         followerId_followingId: {
-          followerId: currentUserId,
-          followingId: userId
+          followerId: userId,
+          followingId: currentUserId
         }
       }
     });
