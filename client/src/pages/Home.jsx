@@ -197,6 +197,7 @@ StatusPostCard.propTypes = {
     fileUrl: PropTypes.string,
     createdAt: PropTypes.string,
     user: PropTypes.shape({
+      id: PropTypes.string,
       firstName: PropTypes.string,
       lastName: PropTypes.string,
       jobTitle: PropTypes.string,
@@ -206,70 +207,121 @@ StatusPostCard.propTypes = {
 };
 
 function ConnectionRequestPanel() {
-  // Hard-coded sample connection requests
-  const requests = [
-    { id: '1', avatarUrl: fallbackAvatar, name: 'Peter', role: 'Business' },
-    { id: '2', avatarUrl: fallbackAvatar, name: 'Jane', role: 'Developer' }
-  ];
+  const token = localStorage.getItem('token');
+  const [incomingRequests, setIncomingRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchIncomingRequests = async () => {
+      try {
+        const response = await axios.get(
+          'http://localhost:5200/api/connection/incoming',
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        // Expecting response.data.data.requests to be an array of user objects.
+        setIncomingRequests(response.data.data.requests);
+      } catch (error) {
+        console.error('Error fetching incoming connection requests:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchIncomingRequests();
+  }, [token]);
+
+  const handleConfirm = async followerId => {
+    try {
+      await axios.post(
+        'http://localhost:5200/api/connection/accept',
+        { followerId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIncomingRequests(prev =>
+        prev.filter(request => request.id !== followerId)
+      );
+    } catch (error) {
+      console.error('Error accepting connection:', error);
+    }
+  };
+
+  const handleReject = async followerId => {
+    try {
+      await axios.delete(`http://localhost:5200/api/connection/${followerId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setIncomingRequests(prev =>
+        prev.filter(request => request.id !== followerId)
+      );
+    } catch (error) {
+      console.error('Error rejecting connection:', error);
+    }
+  };
 
   return (
-    <div className='bg-white rounded-lg shadow p-4'>
-      <h3 className='text-md font-semibold mb-3'>Connection Requests</h3>
-      {requests.map(user => (
-        <div key={user.id} className='flex items-center justify-between mb-3'>
-          <div className='flex items-center space-x-2'>
-            <img
-              src={user.avatarUrl}
-              alt='User Avatar'
-              className='w-8 h-8 rounded-full object-cover'
-            />
-            <div>
-              <p className='text-sm font-medium text-gray-700'>{user.name}</p>
-              <p className='text-xs text-gray-500'>{user.role}</p>
+    <div className='bg-white rounded-lg shadow p-3'>
+      <h3 className='text-md font-semibold mb-2'>Connection Requests</h3>
+      {loading ? (
+        <p className='text-sm text-gray-500'>Loading...</p>
+      ) : incomingRequests.length === 0 ? (
+        <p className='text-sm text-gray-500'>No pending connection requests.</p>
+      ) : (
+        incomingRequests.map(request => (
+          <div
+            key={request.id}
+            className='flex items-center justify-between mb-2 bg-gray-50 p-2 rounded'
+          >
+            <div className='flex items-center space-x-2'>
+              <img
+                src={request.imageUrl || fallbackAvatar}
+                alt='Avatar'
+                className='w-6 h-6 rounded-full object-cover'
+              />
+              <div>
+                <p className='font-medium text-sm leading-tight'>
+                  {request.firstName} {request.lastName}
+                </p>
+                <p className='text-xs text-gray-500 leading-tight'>
+                  @{request.username}
+                </p>
+              </div>
+            </div>
+            <div className='flex space-x-1'>
+              <button
+                onClick={() => handleConfirm(request.id)}
+                className='bg-green-600 text-white px-2 py-1 text-xs rounded hover:bg-green-700 transition-colors'
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => handleReject(request.id)}
+                className='bg-red-600 text-white px-2 py-1 text-xs rounded hover:bg-red-700 transition-colors'
+              >
+                Reject
+              </button>
             </div>
           </div>
-          <div className='space-x-1'>
-            <button className='px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white'>
-              Confirm
-            </button>
-            <button className='px-2 py-1 text-xs text-gray-600 border border-gray-300 rounded hover:bg-gray-100'>
-              Delete
-            </button>
-          </div>
-        </div>
-      ))}
+        ))
+      )}
+
+      <div className='mt-3'>
+        <button
+          onClick={() => window.location.reload()}
+          className='bg-blue-600 text-white px-3 py-1.5 text-sm rounded hover:bg-blue-700 transition-colors'
+        >
+          Refresh Requests
+        </button>
+      </div>
     </div>
   );
 }
 
 function ConnectionSuggestPanel() {
-  // Hard-coded sample connection suggestions
-  const suggestions = [
-    { id: '3', avatarUrl: fallbackAvatar, name: 'Alex', role: 'Business' },
-    { id: '4', avatarUrl: fallbackAvatar, name: 'Maria', role: 'Designer' }
-  ];
-
+  // For now, we'll display a placeholder message. Replace with dynamic data as needed.
   return (
     <div className='bg-white rounded-lg shadow p-4'>
       <h3 className='text-md font-semibold mb-3'>Connection Suggestions</h3>
-      {suggestions.map(user => (
-        <div key={user.id} className='flex items-center justify-between mb-3'>
-          <div className='flex items-center space-x-2'>
-            <img
-              src={user.avatarUrl}
-              alt='User Avatar'
-              className='w-8 h-8 rounded-full object-cover'
-            />
-            <div>
-              <p className='text-sm font-medium text-gray-700'>{user.name}</p>
-              <p className='text-xs text-gray-500'>{user.role}</p>
-            </div>
-          </div>
-          <button className='px-2 py-1 text-xs text-blue-600 border border-blue-600 rounded hover:bg-blue-600 hover:text-white'>
-            Follow
-          </button>
-        </div>
-      ))}
+      <p className='text-sm text-gray-500'>No suggestions available.</p>
     </div>
   );
 }
