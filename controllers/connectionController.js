@@ -5,27 +5,20 @@ import { StatusCodes } from 'http-status-codes';
 
 const prisma = new PrismaClient();
 
+// In controllers/connectionController.js
 export const getConnectionStatus = async (req, res) => {
   const currentUserId = req.user.id || req.user.userId;
   const { userId } = req.params;
   try {
-    const connection = await prisma.connection.findUnique({
+    const connection = await prisma.connection.findFirst({
       where: {
-        followerId_followingId: {
-          followerId: currentUserId,
-          followingId: userId
-        }
+        OR: [
+          { followerId: currentUserId, followingId: userId },
+          { followerId: userId, followingId: currentUserId }
+        ]
       }
     });
-    if (connection) {
-      return successResponse(res, 'Connection exists', {
-        status: connection.status
-      });
-    } else {
-      return successResponse(res, 'No connection found', {
-        status: 'not-connected'
-      });
-    }
+    return successResponse(res, 'Connection status fetched', { connection });
   } catch (error) {
     console.error('Error fetching connection status:', error);
     return errorResponse(
@@ -110,7 +103,6 @@ export const deleteConnection = async (req, res) => {
   }
 };
 
-
 export const getIncomingConnections = async (req, res) => {
   const currentUserId = req.user.id || req.user.userId;
   try {
@@ -124,7 +116,7 @@ export const getIncomingConnections = async (req, res) => {
       }
     });
     // Return the follower information for each connection
-    const requests = connections.map((connection) => connection.follower);
+    const requests = connections.map(connection => connection.follower);
     return successResponse(res, 'Incoming requests fetched', { requests });
   } catch (error) {
     console.error('Error fetching incoming connections:', error);
@@ -132,6 +124,26 @@ export const getIncomingConnections = async (req, res) => {
       res,
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Error fetching incoming connections'
+    );
+  }
+};
+
+export const getConnectionCount = async (req, res) => {
+  const { userId } = req.params; // The user whose connection count you want
+  try {
+    const count = await prisma.connection.count({
+      where: {
+        status: 'ACCEPTED',
+        OR: [{ followerId: userId }, { followingId: userId }]
+      }
+    });
+    return successResponse(res, 'Connection count fetched', { count });
+  } catch (error) {
+    console.error('Error fetching connection count:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching connection count'
     );
   }
 };

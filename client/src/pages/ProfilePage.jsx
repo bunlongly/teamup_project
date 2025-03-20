@@ -62,6 +62,9 @@ function Profile() {
     portfolio: ''
   });
 
+  // New state for dynamic connection count
+  const [connectionCount, setConnectionCount] = useState(0);
+
   // Edit mode state for each section
   const [editMode, setEditMode] = useState({
     personal: false,
@@ -163,6 +166,25 @@ function Profile() {
     fetchUserData();
   }, [profileId, currentUserId, navigate, token]);
 
+  // Fetch connection count for this profile
+  useEffect(() => {
+    const fetchConnectionCount = async () => {
+      const userIdToFetch = profileId || currentUserId;
+      if (!userIdToFetch) return;
+      try {
+        const response = await axios.get(
+          `http://localhost:5200/api/connection/count/${userIdToFetch}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setConnectionCount(response.data.data.count);
+      } catch (error) {
+        console.error('Error fetching connection count:', error);
+      }
+    };
+
+    fetchConnectionCount();
+  }, [profileId, currentUserId, token]);
+
   // File change handlers
   const handleProfilePictureChange = e => {
     const file = e.target.files[0];
@@ -188,7 +210,7 @@ function Profile() {
       navigate('/login');
       return;
     }
-    const userIdToUpdate = currentUserId; // only allow the current user to update their own profile
+    const userIdToUpdate = currentUserId; // Only allow current user to update their own profile
     const transformedExperience = experience.map(exp => ({
       ...exp,
       position: exp.title
@@ -370,7 +392,9 @@ function Profile() {
             {personalInfo.location || 'Your location here'}
           </p>
           <div className='mt-2'>
-            <p className='text-blue-500 font-medium'>50 Connections</p>
+            <p className='text-blue-500 font-medium'>
+              {connectionCount} Connections
+            </p>
             <p className='text-gray-500 text-sm'>
               Contact info: {personalInfo.email}
             </p>

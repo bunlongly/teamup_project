@@ -5,7 +5,8 @@ import {
   createConnection,
   deleteConnection,
   getIncomingConnections,
-  acceptConnection
+  acceptConnection,
+  getConnectionCount
 } from '../controllers/connectionController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 
@@ -19,5 +20,6 @@ router.get('/incoming', authenticateUser, getIncomingConnections);
 
 router.post('/accept', authenticateUser, acceptConnection);
 
+router.get('/count/:userId', authenticateUser, getConnectionCount);
 
 export default router;

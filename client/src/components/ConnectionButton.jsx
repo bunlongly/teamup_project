@@ -6,8 +6,15 @@ import PropTypes from 'prop-types';
 function ConnectionButton({ profileUserId }) {
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
-  // Status can be 'not-connected', 'pending', or 'accepted'
-  const [status, setStatus] = useState('not-connected');
+  /**
+   * statusObj holds two fields:
+   * type: 'none' | 'sent' | 'received'
+   * value: 'not-connected' | 'pending' | 'accepted'
+   */
+  const [statusObj, setStatusObj] = useState({
+    type: 'none',
+    value: 'not-connected'
+  });
 
   useEffect(() => {
     if (profileUserId && profileUserId !== currentUserId) {
@@ -16,9 +23,26 @@ function ConnectionButton({ profileUserId }) {
           headers: { Authorization: `Bearer ${token}` }
         })
         .then(res => {
-          // Convert the status to lowercase so that our UI conditions match
-          const dbStatus = res.data.data.status;
-          setStatus(dbStatus ? dbStatus.toLowerCase() : 'not-connected');
+          // The backend returns an object like { connection: { followerId, followingId, status } }
+          const connection = res.data.data.connection;
+          if (connection) {
+            // If the current user is the sender
+            if (connection.followerId === currentUserId) {
+              setStatusObj({
+                type: 'sent',
+                value: connection.status.toLowerCase()
+              });
+            }
+            // If the current user is the receiver
+            else if (connection.followingId === currentUserId) {
+              setStatusObj({
+                type: 'received',
+                value: connection.status.toLowerCase()
+              });
+            }
+          } else {
+            setStatusObj({ type: 'none', value: 'not-connected' });
+          }
         })
         .catch(error => {
           console.error('Error fetching connection status:', error);
@@ -26,6 +50,7 @@ function ConnectionButton({ profileUserId }) {
     }
   }, [profileUserId, currentUserId, token]);
 
+  // For sender: when no connection exists, clicking Connect sends a request.
   const handleConnect = () => {
     axios
       .post(
@@ -34,24 +59,41 @@ function ConnectionButton({ profileUserId }) {
         { headers: { Authorization: `Bearer ${token}` } }
       )
       .then(() => {
-        // Set status to pending upon successful creation
-        setStatus('pending');
+        // Set status as pending (for sent requests)
+        setStatusObj({ type: 'sent', value: 'pending' });
       })
       .catch(error => {
         console.error('Error creating connection:', error);
       });
   };
 
+  // For either sender (cancel) or receiver (reject) action.
   const handleCancelRequest = () => {
     axios
       .delete(`http://localhost:5200/api/connection/${profileUserId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(() => {
-        setStatus('not-connected');
+        setStatusObj({ type: 'none', value: 'not-connected' });
       })
       .catch(error => {
         console.error('Error deleting connection:', error);
+      });
+  };
+
+  // For receiver: confirm the request.
+  const handleConfirmRequest = () => {
+    axios
+      .post(
+        'http://localhost:5200/api/connection/accept',
+        { followerId: profileUserId }, // the sender's id is passed as followerId
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      .then(() => {
+        setStatusObj({ type: 'received', value: 'accepted' });
+      })
+      .catch(error => {
+        console.error('Error accepting connection:', error);
       });
   };
 
@@ -60,29 +102,76 @@ function ConnectionButton({ profileUserId }) {
     return null;
   }
 
-  if (status === 'pending') {
+  // Render based on the type and status:
+  // If no connection exists, show "Connect"
+  if (statusObj.type === 'none') {
     return (
       <button
-        onClick={handleCancelRequest}
-        className='bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors'
+        onClick={handleConnect}
+        className='bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors'
       >
-        Cancel Request
+        Connect
       </button>
     );
   }
 
-  if (status === 'accepted') {
-    return (
-      <button
-        onClick={handleCancelRequest}
-        className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors'
-      >
-        Connected
-      </button>
-    );
+  // If the current user sent the request
+  if (statusObj.type === 'sent') {
+    if (statusObj.value === 'pending') {
+      return (
+        <button
+          onClick={handleCancelRequest}
+          className='bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors'
+        >
+          Cancel Request
+        </button>
+      );
+    }
+    if (statusObj.value === 'accepted') {
+      return (
+        <button
+          onClick={handleCancelRequest}
+          className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors'
+        >
+          Connected
+        </button>
+      );
+    }
   }
 
-  // Default: no connection exists yet, so show "Connect" button.
+  // If the current user is receiving the request
+  if (statusObj.type === 'received') {
+    if (statusObj.value === 'pending') {
+      return (
+        <div className='flex space-x-2'>
+          <button
+            onClick={handleConfirmRequest}
+            className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors'
+          >
+            Confirm
+          </button>
+          <button
+            onClick={handleCancelRequest}
+            className='bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors'
+          >
+            Reject
+          </button>
+        </div>
+      );
+    }
+    if (statusObj.value === 'accepted') {
+      return (
+        <button
+          onClick={handleCancelRequest}
+          className='bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors'
+        >
+          Connected
+        </button>
+      );
+    }
+  }
+
+  // Fallback rendering
   return (
     <button
       onClick={handleConnect}
