@@ -18,4 +18,10 @@ router.post(
   updateApplicationStatus
 );
 
+router.post(
+  '/update/:applicationId',
+  authenticateUser,
+  updateApplicationStatus
+);
+
 export default router;

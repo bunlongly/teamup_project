@@ -119,7 +119,8 @@ export const getPostById = async (req, res) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        user: true // Include user data (you can restrict fields if needed)
+        user: true,
+        applications: true
       }
     });
     if (!post) {

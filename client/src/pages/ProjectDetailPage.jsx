@@ -7,22 +7,34 @@ function ProjectDetailPage() {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  // applicationStatus is null initially (meaning no application yet)
-  // When applied, it will be set to "PENDING", "APPROVED", or "REJECTED"
+  // applicationStatus holds the current user's application status if it exists
   const [applicationStatus, setApplicationStatus] = useState(null);
   const token = localStorage.getItem('token');
+  // Assume the current user's id is stored in localStorage
+  const currentUserId = localStorage.getItem('userId');
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        // Fetch project details from your backend
+        // Ensure your backend endpoint includes applications (see note below)
         const response = await axios.get(
           `http://localhost:5200/api/post/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
-        setProject(response.data.data);
+        const fetchedProject = response.data.data;
+        setProject(fetchedProject);
+
+        // If the project includes applications, check if current user has applied.
+        if (fetchedProject && fetchedProject.applications) {
+          const userApplication = fetchedProject.applications.find(
+            app => app.applicantId === currentUserId
+          );
+          if (userApplication) {
+            setApplicationStatus(userApplication.status);
+          }
+        }
       } catch (error) {
         console.error('Error fetching project details:', error);
       } finally {
@@ -31,9 +43,9 @@ function ProjectDetailPage() {
     };
 
     fetchProject();
-  }, [id, token]);
+  }, [id, token, currentUserId]);
 
-  // Handler for applying to the project
+  // Handler for applying to the project (for non-owners)
   const handleApply = async () => {
     try {
       const response = await axios.post(
@@ -41,8 +53,8 @@ function ProjectDetailPage() {
         { postId: id },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Assuming your backend returns { data: application, message: '...' }
-      setApplicationStatus(response.data.data.status); // Should be "PENDING"
+      // Assuming response.data.data.status is set to "PENDING"
+      setApplicationStatus(response.data.data.status);
     } catch (error) {
       console.error('Error applying to project:', error);
       // Optionally display an error message to the user
@@ -56,6 +68,13 @@ function ProjectDetailPage() {
   if (!project) {
     return <p className='p-4'>Project not found.</p>;
   }
+
+  // Check if current user is the owner of the project
+  const isOwner = project.userId === currentUserId;
+  // Fallback: if applications field is undefined, use an empty array.
+  const applicationCount = project.applications
+    ? project.applications.length
+    : 0;
 
   return (
     <div className='container mx-auto p-4'>
@@ -110,26 +129,42 @@ function ProjectDetailPage() {
       </div>
 
       <div className='mt-8'>
-        {/* Show application status if applied, otherwise show Apply button */}
-        {applicationStatus ? (
+        {isOwner ? (
           <div className='p-4 bg-gray-100 border rounded'>
-            {applicationStatus === 'PENDING' && (
-              <p className='text-sm text-blue-600'>Application Pending</p>
-            )}
-            {applicationStatus === 'APPROVED' && (
-              <p className='text-sm text-green-600'>Application Approved</p>
-            )}
-            {applicationStatus === 'REJECTED' && (
-              <p className='text-sm text-red-600'>Application Rejected</p>
-            )}
+            <p className='text-sm text-gray-700'>
+              Total Applications: {applicationCount}
+            </p>
+            {/* Optionally, you can list or link to detailed applications */}
           </div>
         ) : (
-          <button
-            onClick={handleApply}
-            className='mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
-          >
-            Apply
-          </button>
+          <div>
+            {applicationStatus ? (
+              <div className='p-4 bg-gray-100 border rounded'>
+                {applicationStatus === 'PENDING' && (
+                  <p className='text-sm text-blue-600'>
+                    Your application is pending approval.
+                  </p>
+                )}
+                {applicationStatus === 'APPROVED' && (
+                  <p className='text-sm text-green-600'>
+                    Your application has been approved.
+                  </p>
+                )}
+                {applicationStatus === 'REJECTED' && (
+                  <p className='text-sm text-red-600'>
+                    Your application was rejected.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={handleApply}
+                className='mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+              >
+                Apply
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
