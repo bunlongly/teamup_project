@@ -84,12 +84,23 @@ export const acceptConnection = async (req, res) => {
       data: { status: 'ACCEPTED' }
     });
 
+    // Create a notification for the sender (who sent the request)
     await prisma.notification.create({
       data: {
         recipientId: followerId,
         senderId: currentUserId,
         type: 'connection_accepted',
         message: 'Your connection request has been accepted.'
+      }
+    });
+
+    // Also create a notification for the acceptor (the current user)
+    await prisma.notification.create({
+      data: {
+        recipientId: currentUserId,
+        senderId: followerId,
+        type: 'connection_confirmed',
+        message: 'You have accepted a connection request.'
       }
     });
     return res.status(200).json({ data: { status: 'accepted', connection } });
@@ -101,9 +112,21 @@ export const acceptConnection = async (req, res) => {
 
 export const deleteConnection = async (req, res) => {
   const currentUserId = req.user.id || req.user.userId;
-  const { userId } = req.params;
-  try {
-    const connection = await prisma.connection.delete({
+  const { userId } = req.params; // This should be the other party's ID
+
+  // Try finding the connection where current user is the sender (outgoing request)
+  let connection = await prisma.connection.findUnique({
+    where: {
+      followerId_followingId: {
+        followerId: currentUserId,
+        followingId: userId
+      }
+    }
+  });
+
+  // If not found, try finding the connection where current user is the receiver (incoming request)
+  if (!connection) {
+    connection = await prisma.connection.findUnique({
       where: {
         followerId_followingId: {
           followerId: userId,
@@ -111,7 +134,30 @@ export const deleteConnection = async (req, res) => {
         }
       }
     });
-    return successResponse(res, 'Connection removed successfully', connection);
+  }
+
+  if (!connection) {
+    return errorResponse(
+      res,
+      StatusCodes.NOT_FOUND,
+      'Connection not found or already removed.'
+    );
+  }
+
+  try {
+    const deletedConnection = await prisma.connection.delete({
+      where: {
+        followerId_followingId: {
+          followerId: connection.followerId,
+          followingId: connection.followingId
+        }
+      }
+    });
+    return successResponse(
+      res,
+      'Connection removed successfully',
+      deletedConnection
+    );
   } catch (error) {
     console.error('Error deleting connection:', error);
     return errorResponse(
@@ -166,5 +212,3 @@ export const getConnectionCount = async (req, res) => {
     );
   }
 };
-
-
