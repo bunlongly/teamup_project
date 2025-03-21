@@ -7,18 +7,21 @@ function ProjectDetailPage() {
   const { id } = useParams();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  // applicationStatus is null initially (meaning no application yet)
+  // When applied, it will be set to "PENDING", "APPROVED", or "REJECTED"
+  const [applicationStatus, setApplicationStatus] = useState(null);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
+        // Fetch project details from your backend
         const response = await axios.get(
           `http://localhost:5200/api/post/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` }
           }
         );
-        // Assuming your backend returns { data: { post: {...} } } or just the post object directly
         setProject(response.data.data);
       } catch (error) {
         console.error('Error fetching project details:', error);
@@ -29,6 +32,22 @@ function ProjectDetailPage() {
 
     fetchProject();
   }, [id, token]);
+
+  // Handler for applying to the project
+  const handleApply = async () => {
+    try {
+      const response = await axios.post(
+        'http://localhost:5200/api/application/apply',
+        { postId: id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Assuming your backend returns { data: application, message: '...' }
+      setApplicationStatus(response.data.data.status); // Should be "PENDING"
+    } catch (error) {
+      console.error('Error applying to project:', error);
+      // Optionally display an error message to the user
+    }
+  };
 
   if (loading) {
     return <p className='p-4'>Loading project details...</p>;
@@ -88,6 +107,30 @@ function ProjectDetailPage() {
             </p>
           )}
         </div>
+      </div>
+
+      <div className='mt-8'>
+        {/* Show application status if applied, otherwise show Apply button */}
+        {applicationStatus ? (
+          <div className='p-4 bg-gray-100 border rounded'>
+            {applicationStatus === 'PENDING' && (
+              <p className='text-sm text-blue-600'>Application Pending</p>
+            )}
+            {applicationStatus === 'APPROVED' && (
+              <p className='text-sm text-green-600'>Application Approved</p>
+            )}
+            {applicationStatus === 'REJECTED' && (
+              <p className='text-sm text-red-600'>Application Rejected</p>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={handleApply}
+            className='mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+          >
+            Apply
+          </button>
+        )}
       </div>
     </div>
   );
