@@ -62,3 +62,64 @@ export const updateApplicationStatus = async (req, res) => {
     return res.status(500).json({ error: 'Error updating application status' });
   }
 };
+
+export const getApplicationsByPost = async (req, res) => {
+  const { postId } = req.params;
+  try {
+    const applications = await prisma.application.findMany({
+      where: { postId },
+      include: {
+        applicant: true // get user data
+      }
+    });
+    return res.status(200).json({ data: applications });
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+    return res.status(500).json({ error: 'Error fetching applications' });
+  }
+};
+
+export const getApplicationsForMyProjects = async (req, res) => {
+  const currentUserId = req.user.id || req.user.userId;
+  try {
+    // 1) Find all posts by the current user
+    const myPosts = await prisma.post.findMany({
+      where: { userId: currentUserId },
+      select: { id: true, projectName: true } // or include more fields if needed
+    });
+    const postIds = myPosts.map(p => p.id);
+
+    // 2) Find all applications for those posts
+    const applications = await prisma.application.findMany({
+      where: { postId: { in: postIds } },
+      include: {
+        applicant: true,
+        post: true // if you want to show project info as well
+      }
+    });
+
+    return res.status(200).json({ data: applications });
+  } catch (error) {
+    console.error('Error fetching applications for my projects:', error);
+    return res.status(500).json({ error: 'Error fetching applications' });
+  }
+};
+
+export const getMyApplications = async (req, res) => {
+  const currentUserId = req.user.id || req.user.userId;
+  try {
+    const myApplications = await prisma.application.findMany({
+      where: {
+        applicantId: currentUserId
+      },
+      include: {
+        post: true, // Include the related post/project data
+        applicant: true // Ensure the applicant data is included
+      }
+    });
+    return res.status(200).json({ data: myApplications });
+  } catch (error) {
+    console.error('Error fetching my applications:', error);
+    return res.status(500).json({ error: 'Error fetching my applications' });
+  }
+};

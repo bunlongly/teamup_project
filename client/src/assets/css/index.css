@@ -1,8 +1,8 @@
 /* ./assets/css/index.css */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap");
-@import "tailwindcss/preflight";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import 'tailwindcss/preflight';
 @tailwind utilities;
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* style for right col */
 .right-col {
@@ -85,7 +85,7 @@
 
 /* style for main-container */
 .main-container {
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* style for createproject page */
@@ -270,7 +270,7 @@
   margin: 10px 0;
 }
 
-.profile-page input[type="text"] {
+.profile-page input[type='text'] {
   width: 100%;
   padding: 8px;
   margin: 5px 0;
@@ -299,7 +299,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-family: "Poppins", sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-weight: 700;
 }
 
@@ -349,4 +349,27 @@
   padding: 1rem;
   border-radius: 10px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.fade-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+.fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.fade-exit-active {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 300ms,
+    transform 300ms;
 }

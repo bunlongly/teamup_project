@@ -2,7 +2,10 @@
 import { Router } from 'express';
 import {
   applyToProject,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getApplicationsByPost,
+  getApplicationsForMyProjects,
+  getMyApplications
 } from '../controllers/applicationController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 
@@ -18,10 +21,12 @@ router.post(
   updateApplicationStatus
 );
 
-router.post(
-  '/update/:applicationId',
-  authenticateUser,
-  updateApplicationStatus
-);
+router.get('/post/:postId', authenticateUser, getApplicationsByPost);
+
+// Endpoint to get applications for projects that the owner posted
+router.get('/all', authenticateUser, getApplicationsForMyProjects);
+
+// Get my (the candidate's) applications
+router.get('/my', authenticateUser, getMyApplications);
 
 export default router;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
 
@@ -12,21 +12,20 @@ function ProjectDetailPage() {
   const token = localStorage.getItem('token');
   // Assume the current user's id is stored in localStorage
   const currentUserId = localStorage.getItem('userId');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        // Ensure your backend endpoint includes applications (see note below)
+        // Ensure your backend endpoint includes applications in the query
         const response = await axios.get(
           `http://localhost:5200/api/post/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
         const fetchedProject = response.data.data;
         setProject(fetchedProject);
 
-        // If the project includes applications, check if current user has applied.
+        // Check if the project includes applications, and if the current user has applied.
         if (fetchedProject && fetchedProject.applications) {
           const userApplication = fetchedProject.applications.find(
             app => app.applicantId === currentUserId
@@ -72,9 +71,17 @@ function ProjectDetailPage() {
   // Check if current user is the owner of the project
   const isOwner = project.userId === currentUserId;
   // Fallback: if applications field is undefined, use an empty array.
-  const applicationCount = project.applications
-    ? project.applications.length
-    : 0;
+  const applications = project.applications || [];
+  const totalApplications = applications.length;
+  const pendingCount = applications.filter(
+    app => app.status === 'PENDING'
+  ).length;
+  const approvedCount = applications.filter(
+    app => app.status === 'APPROVED'
+  ).length;
+  const rejectedCount = applications.filter(
+    app => app.status === 'REJECTED'
+  ).length;
 
   return (
     <div className='container mx-auto p-4'>
@@ -131,10 +138,29 @@ function ProjectDetailPage() {
       <div className='mt-8'>
         {isOwner ? (
           <div className='p-4 bg-gray-100 border rounded'>
+            <h2 className='text-lg font-bold text-gray-800 mb-2'>
+              Application Summary
+            </h2>
             <p className='text-sm text-gray-700'>
-              Total Applications: {applicationCount}
+              Total Applications: {totalApplications}
             </p>
-            {/* Optionally, you can list or link to detailed applications */}
+            <div className='flex space-x-4 mt-2'>
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-blue-500 rounded-full'>
+                Pending: {pendingCount}
+              </span>
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-green-600 rounded-full'>
+                Approved: {approvedCount}
+              </span>
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-red-600 rounded-full'>
+                Rejected: {rejectedCount}
+              </span>
+            </div>
+            <button
+              onClick={() => navigate(`/candidates`)}
+              className='mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+            >
+              View Candidates
+            </button>
           </div>
         ) : (
           <div>
