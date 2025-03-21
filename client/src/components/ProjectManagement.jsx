@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Routes, Route } from "react-router-dom";
-import CreateProjectPage from "../pages/CreateProject";
+import CreateProjectPage from "../pages/Post";
 import Projects from "../pages/Projects";
 
 function ProjectManagement() {

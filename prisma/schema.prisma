@@ -13,10 +13,19 @@ enum Role {
   FREELANCER
 }
 
+enum PostType {
+  STATUS
+  RECRUITMENT
+  PROJECT_SEEKING
+}
+
+
+
 model User {
   id          String     @id @default(uuid()) // Use UUID as the primary key
   firstName   String
   lastName    String
+  dateOfBirth DateTime?
   email       String     @unique
   username String @unique
   phoneNumber String     
@@ -24,14 +33,23 @@ model User {
   password    String
   location    String?
   imageUrl    String?
+  coverImage String?
   jobTitle    String?
   bio         String?
   description String?
+  socialLinks   Json?   @default("{}")
   
   // Relationships
   education   Education[]  // One-to-many relationship with Education
   experience  Experience[]  // One-to-many relationship with Experience
   userSkills  UserSkill[]   // One-to-many relationship with UserSkill (pivot table)
+  posts         Post[]  
+
+  followers      Connection[] @relation("Followers")
+  following      Connection[] @relation("Following")
+
+  notificationsReceived Notification[] @relation("NotificationsReceived")
+  notificationsSent     Notification[] @relation("NotificationsSent")
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -92,4 +110,57 @@ model UserSkill {
   // Relations
   user      User    @relation(fields: [userId], references: [id])
   skill     Skill   @relation(fields: [skillId], references: [id])
+}
+
+
+model Post {
+  id                 String    @id @default(uuid())
+  postType           PostType
+  content            String?   
+  projectName        String?   
+  projectDescription String?   
+  projectType        String?  
+  platform           String?   
+  technicalRole      String?  
+  duration           String?   
+  startDate          DateTime? 
+  endDate            DateTime? 
+  fileUrl            String?   
+  requirement        String?   
+  userId             String
+  user               User      @relation(fields: [userId], references: [id])
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+}
+
+model Connection {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  status      ConnectionStatus @default(PENDING)
+
+  follower    User @relation("Following", fields: [followerId], references: [id])
+  following   User @relation("Followers", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+
+model Notification {
+  id          String   @id @default(uuid())
+  recipientId String   // The user who will receive the notification
+  senderId    String?  // The user who triggered the notification (optional)
+  type        String   // e.g. "connection_request", "connection_accepted"
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  recipient   User     @relation("NotificationsReceived", fields: [recipientId], references: [id])
+  sender      User?    @relation("NotificationsSent", fields: [senderId], references: [id])
 }

@@ -1,75 +1,290 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import logo from "../assets/logo.png";
+// Projects.jsx
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import fallbackLogo from '../assets/logo.png';
 
-function Projects({ projects }) {
+function Projects() {
   const navigate = useNavigate();
-  const [filteredProjects, setFilteredProjects] = useState(projects);
-  const [projectNameFilter, setProjectNameFilter] = useState("");
-  const [roleFilter, setRoleFilter] = useState("");
 
+  const [projects, setProjects] = useState([]);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+
+  // Dropdown options for filters
+  const [projectTypeOptions, setProjectTypeOptions] = useState([]);
+  const [locationOptions, setLocationOptions] = useState([]);
+  const [technicalRoleOptions, setTechnicalRoleOptions] = useState([]);
+  const [platformOptions, setPlatformOptions] = useState([]);
+
+  // Filter states
+  const [searchFilter, setSearchFilter] = useState('');
+  const [postTypeFilter, setPostTypeFilter] = useState('');
+  const [projectTypeFilter, setProjectTypeFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
+  const [technicalRoleFilter, setTechnicalRoleFilter] = useState('');
+  const [platformFilter, setPlatformFilter] = useState('');
+
+  // Fetch posts on mount
+  useEffect(() => {
+    axios
+      .get('http://localhost:5200/api/post/all')
+      .then(response => {
+        // Only keep RECRUITMENT or PROJECT_SEEKING posts
+        const projectPosts = response.data.data.filter(
+          post =>
+            post.postType === 'RECRUITMENT' ||
+            post.postType === 'PROJECT_SEEKING'
+        );
+        setProjects(projectPosts);
+        setFilteredProjects(projectPosts);
+
+        // Extract distinct dropdown options
+        const typeSet = new Set();
+        const locSet = new Set();
+        const roleSet = new Set();
+        const platSet = new Set();
+
+        projectPosts.forEach(post => {
+          if (post.projectType) typeSet.add(post.projectType);
+          if (post.location) locSet.add(post.location);
+          if (post.technicalRole) roleSet.add(post.technicalRole);
+          if (post.platform) platSet.add(post.platform);
+        });
+
+        setProjectTypeOptions([...typeSet]);
+        setLocationOptions([...locSet]);
+        setTechnicalRoleOptions([...roleSet]);
+        setPlatformOptions([...platSet]);
+      })
+      .catch(error => {
+        console.error('Error fetching projects:', error);
+      });
+  }, []);
+
+  // Handle filters
   const handleFilter = () => {
-    const filtered = projects.filter((project) => {
-      const matchesProjectName = project.projectname
-        .toLowerCase()
-        .includes(projectNameFilter.toLowerCase());
-      const matchesRole = project.roles.some((role) =>
-        role.role.toLowerCase().includes(roleFilter.toLowerCase())
+    const filtered = projects.filter(project => {
+      // 1) Search filter (combine projectName + projectDescription)
+      let combinedText = '';
+      if (project.projectName)
+        combinedText += project.projectName.toLowerCase();
+      if (project.projectDescription)
+        combinedText += ` ${project.projectDescription.toLowerCase()}`;
+      const matchesSearch = !searchFilter.trim()
+        ? true
+        : combinedText.includes(searchFilter.toLowerCase());
+
+      // 2) Post Type filter (exact match)
+      const matchesPostType =
+        !postTypeFilter || project.postType === postTypeFilter;
+
+      // 3) Project Type filter (exact match)
+      const matchesType =
+        !projectTypeFilter ||
+        (project.projectType &&
+          project.projectType.toLowerCase() ===
+            projectTypeFilter.toLowerCase());
+
+      // 4) Location filter (exact match)
+      const matchesLocation =
+        !locationFilter ||
+        (project.location &&
+          project.location.toLowerCase() === locationFilter.toLowerCase());
+
+      // 5) Technical Role filter (exact match)
+      const matchesRole =
+        !technicalRoleFilter ||
+        (project.technicalRole &&
+          project.technicalRole.toLowerCase() ===
+            technicalRoleFilter.toLowerCase());
+
+      // 6) Platform filter (exact match)
+      const matchesPlatform =
+        !platformFilter ||
+        (project.platform &&
+          project.platform.toLowerCase() === platformFilter.toLowerCase());
+
+      return (
+        matchesSearch &&
+        matchesPostType &&
+        matchesType &&
+        matchesLocation &&
+        matchesRole &&
+        matchesPlatform
       );
-      return matchesProjectName && matchesRole;
     });
     setFilteredProjects(filtered);
   };
 
+  const handleResetFilters = () => {
+    setSearchFilter('');
+    setPostTypeFilter('');
+    setProjectTypeFilter('');
+    setLocationFilter('');
+    setTechnicalRoleFilter('');
+    setPlatformFilter('');
+    setFilteredProjects(projects);
+  };
+
   return (
-    <div className="projects-page">
-      <div className="grid grid-cols-10 w-4/5 mx-auto main-container space-x-8">
-        <div className="col-span-7 projects-left-col">
-          {filteredProjects.map((project, index) => (
-            <ProjectDetail key={index} project={project} />
-          ))}
+    <div className='w-11/12 mx-auto mt-8'>
+      <div className='grid grid-cols-12 gap-6'>
+        {/* LEFT COLUMN: Project Feed */}
+        <div className='col-span-12 md:col-span-8 space-y-4'>
+          {filteredProjects.length === 0 ? (
+            <p className='text-gray-500'>
+              No projects found. Try adjusting filters.
+            </p>
+          ) : (
+            filteredProjects.map((project, index) => (
+              <ProjectCard key={index} project={project} />
+            ))
+          )}
         </div>
-        <div className="col-span-3 projects-right-col">
+
+        {/* RIGHT COLUMN: Filter Panel */}
+        <div className='col-span-12 md:col-span-4 space-y-4'>
           <button
-            style={{ backgroundColor: "#0046b0", color: "#fff" }}
-            type="button"
-            onClick={() => navigate("/projects/create")}
-            className="rounded-md px-3 py-1.5 text-sm font-semibold text-black shadow-xs mb-4"
+            onClick={() => navigate('/projects/create')}
+            className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors'
+            style={{ backgroundColor: '#0046b0' }}
           >
-            Create Project
+            Create Post
           </button>
-          <div className="filter-panel p-4 bg-white rounded-md shadow-md">
-            <h3 className="text-lg font-bold mb-4">Filter Projects</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Project Name
+
+          <div className='bg-white rounded-md shadow p-4'>
+            <h3 className='text-lg font-bold mb-4'>Filter</h3>
+
+            {/* Search Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Search
               </label>
               <input
-                type="text"
-                value={projectNameFilter}
-                onChange={(e) => setProjectNameFilter(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2"
+                type='text'
+                value={searchFilter}
+                onChange={e => setSearchFilter(e.target.value)}
+                placeholder='Search by name or description'
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700">
-                Role Needed
+
+            {/* Post Type Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Post Type
               </label>
-              <input
-                type="text"
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2"
-              />
+              <select
+                value={postTypeFilter}
+                onChange={e => setPostTypeFilter(e.target.value)}
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              >
+                <option value=''>All</option>
+                <option value='RECRUITMENT'>Recruitment</option>
+                <option value='PROJECT_SEEKING'>Project Seeking</option>
+              </select>
             </div>
-            <button
-              style={{ backgroundColor: "#0046b0", color: "#fff" }}
-              type="button"
-              onClick={handleFilter}
-              className="rounded-md px-3 py-2 text-sm font-semibold text-black shadow-xs"
-            >
-              Search
-            </button>
+
+            {/* Project Type Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Project Type
+              </label>
+              <select
+                value={projectTypeFilter}
+                onChange={e => setProjectTypeFilter(e.target.value)}
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              >
+                <option value=''>All</option>
+                {projectTypeOptions.map(type => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Location Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Location
+              </label>
+              <select
+                value={locationFilter}
+                onChange={e => setLocationFilter(e.target.value)}
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              >
+                <option value=''>All</option>
+                {locationOptions.map(loc => (
+                  <option key={loc} value={loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Technical Role Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Technical Role
+              </label>
+              <select
+                value={technicalRoleFilter}
+                onChange={e => setTechnicalRoleFilter(e.target.value)}
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              >
+                <option value=''>All</option>
+                {technicalRoleOptions.map(role => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Platform Filter */}
+            <div className='mb-4'>
+              <label className='block text-sm font-medium text-gray-700'>
+                Platform
+              </label>
+              <select
+                value={platformFilter}
+                onChange={e => setPlatformFilter(e.target.value)}
+                className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              >
+                <option value=''>All</option>
+                {platformOptions.map(plat => (
+                  <option key={plat} value={plat}>
+                    {plat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className='flex space-x-2'>
+              {/* Apply Filter Button */}
+              <button
+                onClick={handleFilter}
+                className='w-full rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out relative overflow-hidden'
+                style={{ backgroundColor: '#0046b0' }}
+              >
+                {/* Gradient Overlay on Hover */}
+                <div className='absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-400 opacity-0 hover:opacity-100 transition-opacity duration-300'></div>
+                <span className='relative z-10'>Apply Filter</span>
+              </button>
+
+              {/* Reset Filter Button */}
+              <button
+                onClick={handleResetFilters}
+                className='w-full rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 ease-in-out relative overflow-hidden'
+                style={{ backgroundColor: '#6b7280' }}
+              >
+                {/* Gradient Overlay on Hover */}
+                <div className='absolute inset-0 bg-gradient-to-r from-gray-700 to-gray-500 opacity-0 hover:opacity-100 transition-opacity duration-300'></div>
+                <span className='relative z-10'>Reset Filter</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -77,128 +292,171 @@ function Projects({ projects }) {
   );
 }
 
-function ProjectDetail({ project }) {
-  const [showFullDescription, setShowFullDescription] = useState(false);
+/**
+ * Card component for a single project post.
+ */
+function ProjectCard({ project }) {
   const navigate = useNavigate();
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   const toggleDescription = () => {
     setShowFullDescription(!showFullDescription);
   };
 
-  const handleRoleClick = (role) => {
-    navigate("/apply", { 
-      state: { 
-        role: role.role, 
-        requirement: role.requirement, 
-        projectname: project.projectname, 
-        projecttype: project.projecttype, 
-        startdate: project.startdate, 
-        enddate: project.enddate, 
+  // Navigate to the Apply page with project details.
+  const handleRoleClick = () => {
+    navigate('/apply', {
+      state: {
+        role: project.technicalRole,
+        requirement: project.requirement,
+        projectName: project.projectName,
+        projectType: project.projectType,
+        startDate: project.startDate,
+        endDate: project.endDate,
         location: project.location,
-        description: project.projectdescription
-      } 
+        description: project.projectDescription
+      }
     });
   };
 
+  const handleCardClick = () => {
+    navigate(`/projects/detail/${project.id}`);
+  };
+
   return (
-    <div className="project-detail bg-white mb-4 rounded-md shadow-md overflow-hidden details-container">
-      <div className="flex">
-        <div className="w-1/4 p-4">
-          <img src={logo} width={70} alt="Logo" />
+    <div
+      className='bg-white rounded-md shadow overflow-hidden cursor-pointer'
+      onClick={handleCardClick}
+    >
+      <div className='flex p-4'>
+        {/* Left: Project image (displayed as a circle) */}
+        <div className='w-1/5 flex flex-col items-center justify-center space-y-2'>
+          {/* Image */}
+          {project.user.imageUrl ? (
+            <img
+              src={project.user.imageUrl}
+              alt='Project'
+              className='w-16 h-16 rounded-full object-cover'
+            />
+          ) : (
+            <img
+              src={fallbackLogo}
+              alt='Default Logo'
+              className='w-16 h-16 rounded-full'
+            />
+          )}
+
+          {/* User Info */}
+          {project.user && (
+            <div className='text-center'>
+              {/* First Name and Last Name */}
+              <p className='text-sm font-semibold text-gray-700'>
+                {project.user.firstName} {project.user.lastName}
+              </p>
+              {/* Username */}
+              <p className='text-xs text-gray-500'>@{project.user.username}</p>
+            </div>
+          )}
         </div>
-        <div className="w-3/4">
-          <div className="text-black p-4 rounded-t-md text-m font-bold mb-2">
-            <p
-              style={{
-                fontFamily: "poppins",
-                fontSize: "1rem",
-                color: "black",
-              }}
-            >
-              {project.projectname}
+
+        {/* Right: Project details */}
+        <div className='w-4/5 pl-4'>
+          <h2 className='text-lg font-bold mb-2'>
+            {project.projectName || 'Untitled Project'}
+          </h2>
+
+          {/* Display platform and post type badge on the same line */}
+          <div className='flex items-center justify-between mb-2'>
+            <p className='text-sm text-gray-600'>
+              <strong>Platform:</strong> {project.platform || 'N/A'}
             </p>
+            {project.postType === 'RECRUITMENT' && (
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-green-600 rounded-full'>
+                Recruitment
+              </span>
+            )}
+            {project.postType === 'PROJECT_SEEKING' && (
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-purple-600 rounded-full'>
+                Project Seeking
+              </span>
+            )}
           </div>
-          <div className="flex space-x-4 ml-4">
-            <div className="mt-2 w-1/3">
-              <p
-                style={{
-                  fontFamily: "poppins",
-                  fontSize: "0.8rem",
-                  color: "black",
-                }}
-              >
-                <strong>Project Length</strong>
-                {project.duration}
-              </p>
+
+          {/* Basic metadata */}
+          <div className='flex flex-wrap text-sm text-gray-600 mb-2'>
+            <div className='mr-4'>
+              <strong>Project Type:</strong> {project.projectType || 'N/A'}
             </div>
-            <div className="mt-2 w-1/3">
-              <p
-                style={{
-                  fontFamily: "poppins",
-                  fontSize: "0.8rem",
-                  color: "black",
-                }}
-              >
-                <strong>Project Type:</strong>
-                {project.projecttype}
-              </p>
+            <div className='mr-4'>
+              <strong>Duration:</strong> {project.duration || 'N/A'}
             </div>
-            <div className="mt-2 w-1/3">
-              <p
-                style={{
-                  fontFamily: "poppins",
-                  fontSize: "0.8rem",
-                  color: "black",
-                }}
-              >
-                <strong>Location: </strong>
-                {project.location}
-              </p>
+            <div className='mr-4'>
+              <strong>Location:</strong> {project.location || 'N/A'}
             </div>
           </div>
-          <div className="p-4 break-words project-description">
-            <p className="mr-4"
-              style={{
-                fontFamily: "poppins",
-                fontSize: "0.8rem",
-                color: "rgba(128, 128, 128, 0.9)",
-              }}
-            >
-              Description: <br />
-              {showFullDescription
-                ? project.projectdescription
-                : `${project.projectdescription.substring(0, 100)}...`}
-            </p>
-            <button
-              style={{
-                fontFamily: "poppins",
-                fontSize: "0.8rem",
-              }}
-              onClick={toggleDescription}
-              className="text-blue-500 underline"
-            >
-              {showFullDescription ? "See Less" : "See More"}
-            </button>
-          </div>
-          <hr className="mr-4 ml-4"/>
-          <div className="project-roles mr-4">
-            {project.roles && project.roles.map((role, index) => (
-              <div key={index} className="mt-2 inline-block p-2">
+
+          {/* Description */}
+          <div className='text-sm text-gray-700 mb-2'>
+            <strong>Description:</strong>{' '}
+            {showFullDescription
+              ? project.projectDescription
+              : (project.projectDescription || '').substring(0, 100)}
+            {project.projectDescription &&
+              project.projectDescription.length > 100 && (
                 <button
-                  style={{ backgroundColor: "#0046b0" }}
-                  type="button"
-                  className="rounded-md px-4 py-1 text-sm font-semibold text-white shadow-xs w-full"
-                  onClick={() => handleRoleClick(role)}
+                  onClick={toggleDescription}
+                  className='text-blue-500 ml-1 underline text-xs'
                 >
-                  {role.role}
+                  {showFullDescription ? 'See Less' : 'See More'}
                 </button>
-              </div>
-            ))}
+              )}
           </div>
+
+          {/* Technical Role Button */}
+          {project.technicalRole && (
+            <>
+              <hr className='my-2' />
+              <button
+                onClick={handleRoleClick}
+                className='text-white rounded-md px-4 py-2 text-sm shadow hover:bg-blue-700 transition-colors'
+                style={{ backgroundColor: '#0046b0' }}
+              >
+                {project.technicalRole}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
+
+ProjectCard.propTypes = {
+  project: PropTypes.shape({
+    postType: PropTypes.string,
+    projectName: PropTypes.string,
+    projectDescription: PropTypes.string,
+    projectType: PropTypes.string,
+    duration: PropTypes.string,
+    location: PropTypes.string,
+    fileUrl: PropTypes.string,
+    startDate: PropTypes.string,
+    endDate: PropTypes.string,
+    technicalRole: PropTypes.string,
+    requirement: PropTypes.string,
+    platform: PropTypes.string,
+    user: PropTypes.shape({
+      firstName: PropTypes.string,
+      lastName: PropTypes.string,
+      username: PropTypes.string,
+      avatarUrl: PropTypes.string,
+      imageUrl: PropTypes.string
+    })
+  }).isRequired
+};
+
+Projects.propTypes = {
+  // Projects are fetched from the backend
+};
 
 export default Projects;
