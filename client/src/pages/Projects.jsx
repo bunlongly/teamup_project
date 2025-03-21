@@ -319,8 +319,15 @@ function ProjectCard({ project }) {
     });
   };
 
+  const handleCardClick = () => {
+    navigate(`/projects/detail/${project.id}`);
+  };
+
   return (
-    <div className='bg-white rounded-md shadow overflow-hidden'>
+    <div
+      className='bg-white rounded-md shadow overflow-hidden cursor-pointer'
+      onClick={handleCardClick}
+    >
       <div className='flex p-4'>
         {/* Left: Project image (displayed as a circle) */}
         <div className='w-1/5 flex flex-col items-center justify-center space-y-2'>

@@ -15,6 +15,7 @@ import Profile from './pages/ProfilePage';
 import CandidatePage from './pages/CandidatesPage';
 import NetworkPage from './pages/NetworkPage';
 import NotificationPage from './pages/NotificationPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -52,11 +53,20 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path='/network'
             element={
               <ProtectedRoute>
                 <NetworkPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/projects/detail/:id'
+            element={
+              <ProtectedRoute>
+                <ProjectDetailPage />
               </ProtectedRoute>
             }
           />
