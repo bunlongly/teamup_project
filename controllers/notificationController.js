@@ -1,3 +1,9 @@
+import { PrismaClient } from '@prisma/client';
+import { successResponse, errorResponse } from '../utils/responseUtil.js';
+import { StatusCodes } from 'http-status-codes';
+
+const prisma = new PrismaClient();
+
 export const getNotifications = async (req, res) => {
   const currentUserId = req.user.id || req.user.userId;
   try {

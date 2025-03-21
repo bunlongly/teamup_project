@@ -14,10 +14,11 @@ import ApplyJob from './pages/ApplyPage';
 import Profile from './pages/ProfilePage';
 import CandidatePage from './pages/CandidatesPage';
 import NetworkPage from './pages/NetworkPage';
+import NotificationPage from './pages/NotificationPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token'); 
+  const token = localStorage.getItem('token');
   console.log('Token:', token);
 
   if (!token) {
@@ -72,6 +73,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/notifications'
+            element={
+              <ProtectedRoute>
+                <NotificationPage />
               </ProtectedRoute>
             }
           />
