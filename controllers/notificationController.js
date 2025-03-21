@@ -1,3 +1,4 @@
+// notificationController.js
 import { PrismaClient } from '@prisma/client';
 import { successResponse, errorResponse } from '../utils/responseUtil.js';
 import { StatusCodes } from 'http-status-codes';
@@ -9,7 +10,10 @@ export const getNotifications = async (req, res) => {
   try {
     const notifications = await prisma.notification.findMany({
       where: { recipientId: currentUserId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sender: true // Include sender details so that your frontend gets sender.firstName, etc.
+      }
     });
     return successResponse(res, 'Notifications fetched', { notifications });
   } catch (error) {
