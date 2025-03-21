@@ -51,6 +51,16 @@ export const createConnection = async (req, res) => {
         following: { connect: { id: targetUserId } }
       }
     });
+
+    // Create a notification for the target user.
+    await prisma.notification.create({
+      data: {
+        recipientId: targetUserId,
+        senderId: currentUserId,
+        type: 'connection_request',
+        message: 'You have received a connection request.'
+      }
+    });
     return res
       .status(201)
       .json({ data: { connection, status: connection.status } });
@@ -72,6 +82,15 @@ export const acceptConnection = async (req, res) => {
         }
       },
       data: { status: 'ACCEPTED' }
+    });
+
+    await prisma.notification.create({
+      data: {
+        recipientId: followerId,
+        senderId: currentUserId,
+        type: 'connection_accepted',
+        message: 'Your connection request has been accepted.'
+      }
     });
     return res.status(200).json({ data: { status: 'accepted', connection } });
   } catch (error) {
@@ -147,3 +166,5 @@ export const getConnectionCount = async (req, res) => {
     );
   }
 };
+
+

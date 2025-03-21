@@ -48,6 +48,9 @@ model User {
   followers      Connection[] @relation("Followers")
   following      Connection[] @relation("Following")
 
+  notificationsReceived Notification[] @relation("NotificationsReceived")
+  notificationsSent     Notification[] @relation("NotificationsSent")
+
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -146,4 +149,18 @@ model Connection {
   following   User @relation("Followers", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
+}
+
+
+model Notification {
+  id          String   @id @default(uuid())
+  recipientId String   // The user who will receive the notification
+  senderId    String?  // The user who triggered the notification (optional)
+  type        String   // e.g. "connection_request", "connection_accepted"
+  message     String
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  recipient   User     @relation("NotificationsReceived", fields: [recipientId], references: [id])
+  sender      User?    @relation("NotificationsSent", fields: [senderId], references: [id])
 }

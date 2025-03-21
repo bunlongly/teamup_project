@@ -6,8 +6,9 @@ import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/authRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import postRoutes from './routes/postRoutes.js';
-import connectionRoutes from './routes/connectionRoutes.js'
+import connectionRoutes from './routes/connectionRoutes.js';
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/connection', connectionRoutes);
+app.use('./api/notification', notificationRoutes);
 
 // Error handling middleware
 app.use(errorHandlerMiddleware);
