@@ -91,8 +91,6 @@ export const createPost = async (req, res) => {
   }
 };
 
-
-
 export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
@@ -110,6 +108,30 @@ export const getAllPosts = async (req, res) => {
       res,
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Error fetching posts',
+      error.message
+    );
+  }
+};
+
+export const getPostById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id },
+      include: {
+        user: true // Include user data (you can restrict fields if needed)
+      }
+    });
+    if (!post) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Post not found');
+    }
+    return successResponse(res, 'Post retrieved successfully', post);
+  } catch (error) {
+    console.error('Error fetching post:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching post',
       error.message
     );
   }
