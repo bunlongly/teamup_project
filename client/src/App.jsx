@@ -17,6 +17,7 @@ import NetworkPage from './pages/NetworkPage';
 import NotificationPage from './pages/NotificationPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import MyProjects from './pages/MyProjects';
+import MyProjectDetailPage from './pages/MyProjectDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -108,6 +109,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyProjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/my-projects/:id'
+            element={
+              <ProtectedRoute>
+                <MyProjectDetailPage />
               </ProtectedRoute>
             }
           />

@@ -1,4 +1,4 @@
-import  { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
@@ -7,8 +7,8 @@ function MyProjects() {
   // "My Projects" shows projects you own;
   // "Enrolled Projects" shows projects where your application is approved.
   const [activeTab, setActiveTab] = useState('My Projects');
-  const [myProjects, setMyProjects] = useState([]); 
-  const [enrolledProjects, setEnrolledProjects] = useState([]); 
+  const [myProjects, setMyProjects] = useState([]);
+  const [enrolledProjects, setEnrolledProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState('');
   const token = localStorage.getItem('token');
@@ -97,7 +97,7 @@ function MyProjects() {
                 setActiveTab(tab);
                 setFilterText('');
               }}
-              className={`cursor-pointer pb-2 transition-all duration-300 ${
+              className={`cursor-pointer pb-2 transition-all duration-300  ${
                 activeTab === tab
                   ? 'border-b-2 border-blue-500 font-semibold text-gray-800'
                   : 'text-gray-500 hover:border-b-2 hover:border-blue-300'
@@ -122,7 +122,7 @@ function MyProjects() {
                   <div
                     key={project.id}
                     className='bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-4 sm:p-6 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl'
-                    onClick={() => navigate(`/projects/detail/${project.id}`)}
+                    onClick={() => navigate(`/my-projects/${project.id}`)}
                   >
                     <img
                       src={project.fileUrl || fallbackLogo}
