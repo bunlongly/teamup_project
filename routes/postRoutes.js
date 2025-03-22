@@ -15,9 +15,8 @@ router.post('/create', authenticateUser, upload.single('file'), createPost);
 
 router.get('/all', getAllPosts);
 
-// router.get('/:id', getPostById);
-
 router.get('/my', authenticateUser, getMyProjects);
 
+router.get('/:id', getPostById);
 
 export default router;
