@@ -137,3 +137,17 @@ export const getPostById = async (req, res) => {
     );
   }
 };
+
+export const getMyProjects = async (req, res) => {
+  const currentUserId = req.user.id || req.user.userId;
+  try {
+    const projects = await prisma.post.findMany({
+      where: { userId: currentUserId },
+      include: { applications: { include: { applicant: true } } }
+    });
+    return res.status(200).json({ data: projects });
+  } catch (error) {
+    console.error('Error fetching my projects:', error);
+    return res.status(500).json({ error: 'Error fetching my projects' });
+  }
+};

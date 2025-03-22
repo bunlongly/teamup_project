@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   createPost,
   getAllPosts,
-  getPostById
+  getPostById,
+  getMyProjects
 } from '../controllers/postController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
@@ -14,6 +15,9 @@ router.post('/create', authenticateUser, upload.single('file'), createPost);
 
 router.get('/all', getAllPosts);
 
-router.get('/:id', getPostById);
+// router.get('/:id', getPostById);
+
+router.get('/my', authenticateUser, getMyProjects);
+
 
 export default router;
