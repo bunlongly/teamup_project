@@ -13,6 +13,7 @@ export const createTask = async (req, res) => {
     const task = await prisma.task.create({
       data: {
         name,
+        description,
         dueDate: dueDate ? new Date(dueDate) : null,
         attachment,
         status, // If not provided, defaults to REVIEW in the schema
