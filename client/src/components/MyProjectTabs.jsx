@@ -1,6 +1,9 @@
-import React from 'react';
+// MyProjectTabs.jsx
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import fallbackLogo from '../assets/logo.png';
+import CreateTaskModal from './CreateTaskModal';
 
 const formatDate = dateString => {
   if (!dateString) return 'N/A';
@@ -13,20 +16,13 @@ function MyProjectTabs({
   setActiveTab,
   tasks,
   teamMembers,
-  newTaskName,
-  setNewTaskName,
-  newTaskDueDate,
-  setNewTaskDueDate,
-  newTaskDescription,
-  setNewTaskDescription,
-  newTaskAssignedTo,
-  setNewTaskAssignedTo,
-  newTaskStatus,
-  setNewTaskStatus,
-  handleAddTask,
   project,
-  ownerName
+  ownerName,
+  onNewTaskCreated // callback to update parent state if needed
 }) {
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <>
       {/* Tabs */}
@@ -51,7 +47,7 @@ function MyProjectTabs({
       {/* Tab Content */}
       {activeTab === 'Task' ? (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task Info */}
+          {/* Left Column: Task Info & Button to open Create Task modal */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
@@ -96,80 +92,12 @@ function MyProjectTabs({
               )}
             </div>
 
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>Assign a New Task</h2>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Task Name
-                </label>
-                <input
-                  type='text'
-                  value={newTaskName}
-                  onChange={e => setNewTaskName(e.target.value)}
-                  placeholder='Enter task name'
-                  className='border rounded w-full p-2 mt-1'
-                />
-              </div>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Due Date
-                </label>
-                <input
-                  type='date'
-                  value={newTaskDueDate}
-                  onChange={e => setNewTaskDueDate(e.target.value)}
-                  className='border rounded w-full p-2 mt-1'
-                />
-              </div>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Task Description
-                </label>
-                <textarea
-                  value={newTaskDescription}
-                  onChange={e => setNewTaskDescription(e.target.value)}
-                  placeholder='Enter task description'
-                  className='border rounded w-full p-2 mt-1'
-                ></textarea>
-              </div>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Assign To
-                </label>
-                <select
-                  value={newTaskAssignedTo}
-                  onChange={e => setNewTaskAssignedTo(e.target.value)}
-                  className='border rounded w-full p-2 mt-1'
-                >
-                  <option value=''>-- Select Member --</option>
-                  {teamMembers.map(member => (
-                    <option key={member.id} value={member.id}>
-                      {member.name} ({member.role})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Status
-                </label>
-                <select
-                  value={newTaskStatus}
-                  onChange={e => setNewTaskStatus(e.target.value)}
-                  className='border rounded w-full p-2 mt-1'
-                >
-                  <option value='Pending'>Pending</option>
-                  <option value='In Progress'>In Progress</option>
-                  <option value='Finished'>Finished</option>
-                </select>
-              </div>
-              <button
-                onClick={handleAddTask}
-                className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
-              >
-                + Add Task
-              </button>
-            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+            >
+              + Create New Task
+            </button>
           </div>
 
           {/* Right Column: Additional Info Panels */}
@@ -227,69 +155,26 @@ function MyProjectTabs({
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                <div className='flex flex-col items-center p-2 bg-gray-50 rounded'>
-                  <img
-                    src={fallbackLogo}
-                    alt='Member'
-                    className='w-16 h-16 object-cover rounded-full mb-2'
-                  />
-                  <p className='font-medium'>John Doe</p>
-                  <p className='text-xs text-gray-500'>Project Manager</p>
-                </div>
-                <div className='flex flex-col items-center p-2 bg-gray-50 rounded'>
-                  <img
-                    src={fallbackLogo}
-                    alt='Member'
-                    className='w-16 h-16 object-cover rounded-full mb-2'
-                  />
-                  <p className='font-medium'>Jane Smith</p>
-                  <p className='text-xs text-gray-500'>Developer</p>
-                </div>
-                <div className='flex flex-col items-center p-2 bg-gray-50 rounded'>
-                  <img
-                    src={fallbackLogo}
-                    alt='Member'
-                    className='w-16 h-16 object-cover rounded-full mb-2'
-                  />
-                  <p className='font-medium'>Michael Brown</p>
-                  <p className='text-xs text-gray-500'>Designer</p>
-                </div>
+                {teamMembers.map(member => (
+                  <div
+                    key={member.id}
+                    className='flex flex-col items-center p-2 bg-gray-50 rounded'
+                  >
+                    <img
+                      src={fallbackLogo}
+                      alt='Member'
+                      className='w-16 h-16 object-cover rounded-full mb-2'
+                    />
+                    <p className='font-medium'>{member.name}</p>
+                    <p className='text-xs text-gray-500'>{member.role}</p>
+                  </div>
+                ))}
               </div>
             </div>
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-xl font-semibold mb-3'>
                 Add New Team Member
               </h2>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Member Name
-                </label>
-                <input
-                  type='text'
-                  placeholder='Enter member name'
-                  className='border rounded w-full p-2 mt-1'
-                />
-              </div>
-              <div className='mb-2'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Member Role
-                </label>
-                <input
-                  type='text'
-                  placeholder='Enter member role'
-                  className='border rounded w-full p-2 mt-1'
-                />
-              </div>
-              <div className='mb-4'>
-                <label className='block text-sm font-medium text-gray-700'>
-                  Profile Picture URL
-                </label>
-                <input
-                  type='text'
-                  placeholder='Enter image URL'
-                  className='border rounded w-full p-2 mt-1'
-                />
-              </div>
               <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
                 + Add Member
               </button>
@@ -342,6 +227,15 @@ function MyProjectTabs({
           </div>
         </div>
       )}
+      {showModal && (
+        <CreateTaskModal
+          onClose={() => setShowModal(false)}
+          onTaskCreated={task => {
+            // Optionally update tasks state here
+            // You can call a prop function to update the parent's tasks
+          }}
+        />
+      )}
     </>
   );
 }
@@ -351,17 +245,6 @@ MyProjectTabs.propTypes = {
   setActiveTab: PropTypes.func.isRequired,
   tasks: PropTypes.array.isRequired,
   teamMembers: PropTypes.array.isRequired,
-  newTaskName: PropTypes.string.isRequired,
-  setNewTaskName: PropTypes.func.isRequired,
-  newTaskDueDate: PropTypes.string.isRequired,
-  setNewTaskDueDate: PropTypes.func.isRequired,
-  newTaskDescription: PropTypes.string.isRequired,
-  setNewTaskDescription: PropTypes.func.isRequired,
-  newTaskAssignedTo: PropTypes.string.isRequired,
-  setNewTaskAssignedTo: PropTypes.func.isRequired,
-  newTaskStatus: PropTypes.string.isRequired,
-  setNewTaskStatus: PropTypes.func.isRequired,
-  handleAddTask: PropTypes.func.isRequired,
   project: PropTypes.object.isRequired,
   ownerName: PropTypes.string.isRequired
 };
