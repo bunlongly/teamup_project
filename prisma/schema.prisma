@@ -197,6 +197,7 @@ model Task {
   id           String     @id @default(uuid())
   name         String
   dueDate      DateTime?
+  description String
   attachment   String?    // URL to the uploaded image (if any)
   status       TaskStatus @default(IN_PROGRESS)
   assignedToId String?    // Optional: the ID of the team member assigned
