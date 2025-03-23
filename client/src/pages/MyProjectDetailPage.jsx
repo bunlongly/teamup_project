@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
@@ -8,10 +8,14 @@ function MyProjectDetailPage() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  // All hooks are declared at the top.
+  // Tabs: "Task" and "Team"
+  const [activeTab, setActiveTab] = useState('Task');
+
+  // Project data and loading state
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('Task');
+
+  // Hard-coded tasks (demo)
   const [tasks, setTasks] = useState([
     {
       id: 1,
@@ -30,11 +34,15 @@ function MyProjectDetailPage() {
       assignedTo: 'Michael Brown'
     }
   ]);
+
+  // Hard-coded team members (demo)
   const [teamMembers, setTeamMembers] = useState([
     { id: 'u1', name: 'John Doe', role: 'Project Manager' },
     { id: 'u2', name: 'Jane Smith', role: 'Developer' },
     { id: 'u3', name: 'Michael Brown', role: 'Designer' }
   ]);
+
+  // New task form state
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskDueDate, setNewTaskDueDate] = useState('');
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
@@ -47,7 +55,7 @@ function MyProjectDetailPage() {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  // Fetch project details from the backend
+  // Fetch project details from backend
   useEffect(() => {
     const fetchProject = async () => {
       setLoading(true);
@@ -69,14 +77,14 @@ function MyProjectDetailPage() {
     fetchProject();
   }, [id, token]);
 
-  // Handler for adding a new task (demo function)
+  // Handler for adding a new task (demo)
   const handleAddTask = () => {
     if (!newTaskName || !newTaskDueDate || !newTaskAssignedTo) {
       alert('Please fill in all fields');
       return;
     }
     const newTask = {
-      id: Date.now(), // For demo purposes; in a real app use backend-generated ID.
+      id: Date.now(), // For demo purposes; replace with backend-generated ID in real app
       name: newTaskName,
       dueDate: newTaskDueDate,
       attachment: null,
@@ -108,25 +116,25 @@ function MyProjectDetailPage() {
         &larr; Back
       </button>
 
-      {/* Render project details inside a fragment */}
       <>
         {/* Project Info (Header) */}
         <div className='bg-white rounded-md shadow p-6 mb-6'>
           <div className='flex items-center mb-4'>
             <img
-              src={project.fileUrl || fallbackLogo}
+              src={project.user?.imageUrl || fallbackLogo}
               alt='Project'
               className='w-16 h-16 object-contain rounded mr-4'
             />
             <div>
               <h1 className='text-2xl font-bold'>
-                {project.projectName || 'Untitled Project'}
+                {project.user?.jobTitle || 'No job title'}
               </h1>
               <p className='text-sm text-gray-600'>
-                {project.postType || 'STATUS'}
+                @{project.user?.username || 'username'}
               </p>
             </div>
           </div>
+
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-700 mb-4'>
             <div>
               <span className='font-semibold'>Owner:</span> {ownerName}
@@ -155,6 +163,25 @@ function MyProjectDetailPage() {
           <p className='text-gray-700'>
             {project.projectDescription || 'No description provided.'}
           </p>
+        </div>
+
+        {/* Additional Project Overview Panel */}
+        <div className='bg-white rounded-md shadow p-6 mb-6 flex flex-col sm:flex-row items-center'>
+          <div className='w-full sm:w-1/3 mb-4 sm:mb-0'>
+            <img
+              src={project.fileUrl || fallbackLogo}
+              alt='Project Overview'
+              className='w-full h-auto object-cover rounded'
+            />
+          </div>
+          <div className='w-full sm:w-2/3 sm:pl-6'>
+            <h2 className='text-2xl font-bold mb-2'>
+              {project.projectName || 'Untitled Project'}
+            </h2>
+            <p className='text-gray-700 mb-2'>
+              {project.projectDescription || 'No description provided.'}
+            </p>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -297,8 +324,42 @@ function MyProjectDetailPage() {
             <div className='lg:col-span-4 space-y-4'>
               <div className='bg-white rounded-md shadow p-4'>
                 <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
-                <p className='text-sm text-gray-600 mb-1'>Web Development</p>
-                <p className='text-sm text-gray-600 mb-1'>UI/UX Design</p>
+                <div className='flex items-center mb-2'>
+                  <img
+                    src={project.fileUrl || fallbackLogo}
+                    alt='Project'
+                    className='w-16 h-16 object-cover rounded mr-4'
+                  />
+                  <div>
+                    <h3 className='font-bold text-xl'>
+                      {project.projectName || 'Untitled Project'}
+                    </h3>
+                    <p className='text-sm text-gray-600'>
+                      {project.projectDescription
+                        ? project.projectDescription.substring(0, 100) + '...'
+                        : 'No description provided.'}
+                    </p>
+                  </div>
+                </div>
+                <div className='mt-4'>
+                  <h3 className='font-semibold'>Owner Information</h3>
+                  <div className='flex items-center mt-2'>
+                    <img
+                      src={project.user?.imageUrl || fallbackLogo}
+                      alt='Owner'
+                      className='w-12 h-12 object-cover rounded-full mr-3'
+                    />
+                    <div>
+                      <p className='font-bold'>{ownerName}</p>
+                      <p className='text-xs text-gray-500'>
+                        {project.user?.jobTitle || 'No job title'}
+                      </p>
+                      <p className='text-xs text-gray-500'>
+                        @{project.user?.username || 'username'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className='bg-white rounded-md shadow p-4'>
                 <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
@@ -307,8 +368,9 @@ function MyProjectDetailPage() {
             </div>
           </div>
         ) : (
+          // TEAM TAB
           <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-            {/* TEAM TAB */}
+            {/* Left Column: Team Members */}
             <div className='lg:col-span-8 space-y-4'>
               <div className='bg-white rounded-md shadow p-4'>
                 <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
@@ -384,8 +446,42 @@ function MyProjectDetailPage() {
             <div className='lg:col-span-4 space-y-4'>
               <div className='bg-white rounded-md shadow p-4'>
                 <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
-                <p className='text-sm text-gray-600 mb-1'>Web Development</p>
-                <p className='text-sm text-gray-600 mb-1'>UI/UX Design</p>
+                <div className='flex items-center mb-2'>
+                  <img
+                    src={project.fileUrl || fallbackLogo}
+                    alt='Project'
+                    className='w-16 h-16 object-cover rounded mr-4'
+                  />
+                  <div>
+                    <h3 className='font-bold text-xl'>
+                      {project.projectName || 'Untitled Project'}
+                    </h3>
+                    <p className='text-sm text-gray-600'>
+                      {project.projectDescription
+                        ? project.projectDescription.substring(0, 100) + '...'
+                        : 'No description provided.'}
+                    </p>
+                  </div>
+                </div>
+                <div className='mt-4'>
+                  <h3 className='font-semibold'>Owner Information</h3>
+                  <div className='flex items-center mt-2'>
+                    <img
+                      src={project.user?.imageUrl || fallbackLogo}
+                      alt='Owner'
+                      className='w-12 h-12 object-cover rounded-full mr-3'
+                    />
+                    <div>
+                      <p className='font-bold'>{ownerName}</p>
+                      <p className='text-xs text-gray-500'>
+                        {project.user?.jobTitle || 'No job title'}
+                      </p>
+                      <p className='text-xs text-gray-500'>
+                        @{project.user?.username || 'username'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className='bg-white rounded-md shadow p-4'>
                 <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
