@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import NavBar from "../components/NavBar";
+import SubscriptionModal from "../components/SubscriptionModal"; // Ensure you import the SubscriptionModal component
 
-function CreateProjectPage({ projects, addProject, updateProject, deleteProject }) {
+function CreateProjectPage({
+  projects,
+  addProject,
+  updateProject,
+  deleteProject,
+}) {
   const [formData, setFormData] = useState({
     projectname: "",
     projectdescription: "",
@@ -15,6 +21,8 @@ function CreateProjectPage({ projects, addProject, updateProject, deleteProject 
 
   const [isEditing, setIsEditing] = useState(false);
   const [currentProjectIndex, setCurrentProjectIndex] = useState(null);
+  const [createCount, setCreateCount] = useState(0); // Track the number of project creations
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false); // Track the visibility of the subscription modal
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -40,13 +48,25 @@ function CreateProjectPage({ projects, addProject, updateProject, deleteProject 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isEditing) {
-      updateProject(currentProjectIndex, formData);
-      setIsEditing(false);
-      setCurrentProjectIndex(null);
+
+    // First, check if the user has created 3 projects
+    if (createCount >= 3) {
+      setShowSubscriptionModal(true); // Show the subscription modal after 3 creations
     } else {
-      addProject(formData);
+      // Handle creating or updating the project
+      if (isEditing) {
+        updateProject(currentProjectIndex, formData);
+        setIsEditing(false);
+        setCurrentProjectIndex(null);
+      } else {
+        addProject(formData);
+
+        // Increment the project creation count
+        setCreateCount((prevCount) => prevCount + 1); // Use the previous state value
+      }
     }
+
+    // Reset form data after submit
     setFormData({
       projectname: "",
       projectdescription: "",
@@ -67,6 +87,10 @@ function CreateProjectPage({ projects, addProject, updateProject, deleteProject 
 
   const handleDelete = (index) => {
     deleteProject(index);
+  };
+
+  const handleCloseSubscriptionModal = () => {
+    setShowSubscriptionModal(false); // Close the subscription modal
   };
 
   return (
@@ -292,6 +316,10 @@ function CreateProjectPage({ projects, addProject, updateProject, deleteProject 
           ))}
         </div>
       </div>
+      {/* Display SubscriptionModal when necessary */}
+      {showSubscriptionModal && (
+        <SubscriptionModal onClose={handleCloseSubscriptionModal} />
+      )}
     </div>
   );
 }
