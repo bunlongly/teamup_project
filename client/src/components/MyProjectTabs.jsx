@@ -17,7 +17,10 @@ function MyProjectTabs({
   setActiveTab,
   teamMembers,
   project,
-  ownerName
+  ownerName,
+  // For creating a new task (if using a modal)
+  // (Assuming onTaskCreated callback will update tasks in the parent component)
+  onTaskCreated
 }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -25,35 +28,35 @@ function MyProjectTabs({
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [showModal, setShowModal] = useState(false);
 
-  // Function to fetch tasks for the current project
-  const fetchTasks = async () => {
-    try {
-      const response = await axios.get(
-        `http://localhost:5200/api/tasks/post/${project.id}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setTasks(response.data.data);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-    } finally {
-      setLoadingTasks(false);
-    }
-  };
-
+  // Fetch tasks for the current project
   useEffect(() => {
-    if (project && project.id) {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5200/api/tasks/post/${project.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setTasks(response.data.data);
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+      } finally {
+        setLoadingTasks(false);
+      }
+    };
+    if (project?.id) {
       fetchTasks();
     }
   }, [project, token]);
 
-  // Callback when a new task is created
+  // Callback when a new task is created from the modal
   const handleTaskCreated = newTask => {
     setTasks(prev => [...prev, newTask]);
+    if (onTaskCreated) onTaskCreated(newTask);
   };
 
   return (
     <>
-      {/* Tabs for Task/Team */}
+      {/* Tabs */}
       <div className='mb-4 border-b'>
         <ul className='flex space-x-6'>
           {['Task', 'Team'].map(tab => (
@@ -98,8 +101,12 @@ function MyProjectTabs({
                           End: {formatDate(task.endDate)}
                         </p>
                         <p className='text-xs text-gray-500'>
-                          Assigned to: {task.assignedTo?.firstName}{' '}
-                          {task.assignedTo?.lastName}
+                          Assigned to:{' '}
+                          {task.assignedTo
+                            ? `${task.assignedTo.firstName || ''} ${
+                                task.assignedTo.lastName || ''
+                              }`
+                            : 'N/A'}
                         </p>
                       </div>
                       <div>
@@ -180,32 +187,46 @@ function MyProjectTabs({
             </div>
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
-              <p className='text-sm text-gray-600'>Active Members: 3</p>
+              <p className='text-sm text-gray-600'>
+                Active Members: {teamMembers?.length || 0}
+              </p>
             </div>
           </div>
         </div>
       ) : (
-        // TEAM TAB (Hard-coded demo)
+        // TEAM TAB
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           {/* Left Column: Team Members */}
           <div className='lg:col-span-8 space-y-4'>
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                {teamMembers.map(member => (
-                  <div
-                    key={member.id}
-                    className='flex flex-col items-center p-2 bg-gray-50 rounded'
-                  >
-                    <img
-                      src={fallbackLogo}
-                      alt='Member'
-                      className='w-16 h-16 object-cover rounded-full mb-2'
-                    />
-                    <p className='font-medium'>{member.name}</p>
-                    <p className='text-xs text-gray-500'>{member.role}</p>
-                  </div>
-                ))}
+                {teamMembers && teamMembers.length > 0 ? (
+                  teamMembers
+                    .filter(member => member) // defensive filter
+                    .map(member => (
+                      <div
+                        key={member.id}
+                        className='flex flex-col items-center p-2 bg-gray-50 rounded'
+                      >
+                        <img
+                          src={member.imageUrl || fallbackLogo}
+                          alt='Member'
+                          className='w-16 h-16 object-cover rounded-full mb-2'
+                        />
+                        <p className='font-medium'>
+                          {member.firstName
+                            ? `${member.firstName} ${member.lastName}`
+                            : member.name || 'No Name'}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          {member.jobTitle || 'No job title'}
+                        </p>
+                      </div>
+                    ))
+                ) : (
+                  <p className='text-gray-600'>No team members found.</p>
+                )}
               </div>
             </div>
             <div className='bg-white rounded-md shadow p-4'>
@@ -259,7 +280,9 @@ function MyProjectTabs({
             </div>
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
-              <p className='text-sm text-gray-600'>Active Members: 3</p>
+              <p className='text-sm text-gray-600'>
+                Active Members: {teamMembers?.length || 0}
+              </p>
             </div>
           </div>
         </div>

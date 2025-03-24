@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import MyProjectTabs from '../components/MyProjectTabs';
 import MyProjectHeader from '../components/MyProjectHeader';
-import fallbackLogo from '../assets/logo.png';
+import MyProjectTabs from '../components/MyProjectTabs';
 
 function MyProjectDetailPage() {
-  const { id } = useParams(); // project ID from the URL
+  const { id } = useParams(); // project ID from URL
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  // State for project data and loading
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // States for the tabs and task management
+  // States for tabs and tasks/team members (tasks may come from project.tasks)
   const [activeTab, setActiveTab] = useState('Task');
   const [tasks, setTasks] = useState([]);
-  const [teamMembers, setTeamMembers] = useState([
-    { id: 'u1', name: 'John Doe', role: 'Project Manager' },
-    { id: 'u2', name: 'Jane Smith', role: 'Developer' },
-    { id: 'u3', name: 'Michael Brown', role: 'Designer' }
-  ]);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   // New task form state
   const [newTaskName, setNewTaskName] = useState('');
@@ -30,21 +24,35 @@ function MyProjectDetailPage() {
   const [newTaskAssignedTo, setNewTaskAssignedTo] = useState('');
   const [newTaskStatus, setNewTaskStatus] = useState('Pending');
 
-  // Fetch project details from the backend
   useEffect(() => {
     const fetchProject = async () => {
       setLoading(true);
       try {
         const response = await axios.get(
           `http://localhost:5200/api/post/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        setProject(response.data.data);
-        // If the backend returns tasks as a relation, you can set them:
-        if (response.data.data.tasks) {
-          setTasks(response.data.data.tasks);
+        const proj = response.data.data;
+        console.log('Fetched project:', proj);
+        setProject(proj);
+
+        // Set tasks if available
+        if (proj.tasks) {
+          setTasks(proj.tasks);
+          console.log('Fetched tasks:', proj.tasks);
+        } else {
+          console.log('No tasks found in project.');
+        }
+
+        // Extract approved team members from applications
+        if (proj.applications) {
+          const approvedMembers = proj.applications
+            .filter(app => app.status === 'APPROVED' && app.applicant)
+            .map(app => app.applicant);
+          console.log('Approved team members:', approvedMembers);
+          setTeamMembers(approvedMembers);
+        } else {
+          console.log('No applications found in project.');
         }
       } catch (error) {
         console.error('Error fetching project details:', error);
@@ -52,10 +60,10 @@ function MyProjectDetailPage() {
         setLoading(false);
       }
     };
+
     fetchProject();
   }, [id, token]);
 
-  // Compute owner name from project data
   const ownerName = project?.user
     ? `${project.user.firstName} ${project.user.lastName}`
     : 'Unknown Owner';
@@ -73,7 +81,7 @@ function MyProjectDetailPage() {
         &larr; Back
       </button>
 
-      {/* Project Header Section */}
+      {/* Project Header */}
       <MyProjectHeader project={project} ownerName={ownerName} />
 
       {/* Tabs Section */}
@@ -103,7 +111,7 @@ function MyProjectDetailPage() {
             return;
           }
           const newTask = {
-            id: Date.now(), // For demo purposes; in a real app, use a backend-generated ID.
+            id: Date.now(), // For demo purposes; in real app use backend-generated ID.
             name: newTaskName,
             dueDate: newTaskDueDate,
             description: newTaskDescription,

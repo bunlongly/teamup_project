@@ -120,7 +120,8 @@ export const getPostById = async (req, res) => {
       where: { id },
       include: {
         user: true,
-        applications: true
+        tasks: true,
+        applications: { include: { applicant: true } }
       }
     });
     if (!post) {

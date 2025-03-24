@@ -211,6 +211,7 @@ model Task {
   // Relations
   assignedTo   User?      @relation(fields: [assignedToId], references: [id])
   post         Post       @relation(fields: [postId], references: [id])
+  
 }
 
 enum TaskStatus {
