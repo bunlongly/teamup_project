@@ -4,7 +4,8 @@ import {
   createTask,
   updateTask,
   getTasksForPost,
-  deleteTask
+  deleteTask,
+  getTaskById
 } from '../controllers/tasksController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
@@ -30,5 +31,8 @@ router.delete('/:id', authenticateUser, deleteTask);
 
 // Get tasks for a specific project/post
 router.get('/post/:postId', authenticateUser, getTasksForPost);
+
+
+router.get('/:id', authenticateUser, getTaskById);
 
 export default router;

@@ -166,3 +166,28 @@ export const getTasksForPost = async (req, res) => {
     );
   }
 };
+
+
+export const getTaskById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: {
+        assignedTo: true,
+        post: true
+      }
+    });
+    if (!task) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Task not found');
+    }
+    return successResponse(res, 'Task retrieved successfully', task);
+  } catch (error) {
+    console.error('Error fetching task:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching task'
+    );
+  }
+};

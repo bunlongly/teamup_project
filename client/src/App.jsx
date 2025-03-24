@@ -18,6 +18,7 @@ import NotificationPage from './pages/NotificationPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import MyProjects from './pages/MyProjects';
 import MyProjectDetailPage from './pages/MyProjectDetailPage';
+import TaskDetailPage from './pages/TaskDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -117,6 +118,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MyProjectDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/task/:id'
+            element={
+              <ProtectedRoute>
+                <TaskDetailPage />
               </ProtectedRoute>
             }
           />
