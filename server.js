@@ -43,7 +43,7 @@ app.use('/api/post', postRoutes);
 app.use('/api/connection', connectionRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/application', applicationRoutes);
-app.use('api/tasks', taskRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Error handling middleware
 app.use(errorHandlerMiddleware);

@@ -1,6 +1,6 @@
-// MyProjectTabs.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import fallbackLogo from '../assets/logo.png';
 import CreateTaskModal from './CreateTaskModal';
@@ -14,18 +14,38 @@ const formatDate = dateString => {
 function MyProjectTabs({
   activeTab,
   setActiveTab,
-  tasks,
   teamMembers,
   project,
-  ownerName,
-  onNewTaskCreated // callback to update parent state if needed
+  ownerName
 }) {
   const navigate = useNavigate();
+  const [tasks, setTasks] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const token = localStorage.getItem('token');
+
+  // Fetch tasks for the project
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(
+          `http://localhost:5200/api/tasks/post/${project.id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        setTasks(response.data.data);
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+      }
+    };
+    if (project && project.id) {
+      fetchTasks();
+    }
+  }, [project, token]);
 
   return (
     <>
-      {/* Tabs */}
+      {/* Tabs for Task/Team */}
       <div className='mb-4 border-b'>
         <ul className='flex space-x-6'>
           {['Task', 'Team'].map(tab => (
@@ -44,10 +64,9 @@ function MyProjectTabs({
         </ul>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'Task' ? (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task Info & Button to open Create Task modal */}
+          {/* Left Column: Task Info & Button to open Create Task Modal */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
@@ -66,23 +85,24 @@ function MyProjectTabs({
                           Due: {formatDate(task.dueDate)}
                         </p>
                         <p className='text-xs text-gray-500'>
-                          Assigned to: {task.assignedTo}
+                          Assigned to: {task.assignedTo?.firstName}{' '}
+                          {task.assignedTo?.lastName}
                         </p>
                       </div>
                       <div>
-                        {task.status === 'Finished' && (
+                        {task.status === 'FINISHED' && (
                           <span className='px-2 py-1 bg-green-600 text-white text-xs rounded-full'>
                             Finished
                           </span>
                         )}
-                        {task.status === 'In Progress' && (
+                        {task.status === 'IN_PROGRESS' && (
                           <span className='px-2 py-1 bg-blue-500 text-white text-xs rounded-full'>
                             In Progress
                           </span>
                         )}
-                        {task.status === 'Pending' && (
+                        {task.status === 'REVIEW' && (
                           <span className='px-2 py-1 bg-yellow-500 text-white text-xs rounded-full'>
-                            Pending
+                            Review
                           </span>
                         )}
                       </div>
@@ -91,7 +111,6 @@ function MyProjectTabs({
                 </div>
               )}
             </div>
-
             <button
               onClick={() => setShowModal(true)}
               className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
@@ -230,10 +249,10 @@ function MyProjectTabs({
       {showModal && (
         <CreateTaskModal
           onClose={() => setShowModal(false)}
-          onTaskCreated={task => {
-            // Optionally update tasks state here
-            // You can call a prop function to update the parent's tasks
+          onTaskCreated={newTask => {
+            setTasks(prev => [...prev, newTask]);
           }}
+          teamMembers={teamMembers}
         />
       )}
     </>
@@ -243,7 +262,6 @@ function MyProjectTabs({
 MyProjectTabs.propTypes = {
   activeTab: PropTypes.string.isRequired,
   setActiveTab: PropTypes.func.isRequired,
-  tasks: PropTypes.array.isRequired,
   teamMembers: PropTypes.array.isRequired,
   project: PropTypes.object.isRequired,
   ownerName: PropTypes.string.isRequired

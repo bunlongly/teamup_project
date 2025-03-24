@@ -1,9 +1,10 @@
+// CreateTaskModal.jsx
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const CreateTaskModal = ({ onClose, onTaskCreated }) => {
+const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
   const { id } = useParams(); // project ID
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
@@ -12,33 +13,34 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
   const [dueDate, setDueDate] = useState('');
   const [description, setDescription] = useState('');
   const [assignedToId, setAssignedToId] = useState('');
-  const [status, setStatus] = useState('REVIEW');
+  const [status, setStatus] = useState('REVIEW'); // default status
   const [attachment, setAttachment] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async e => {
     e.preventDefault();
+    // Validate required fields
     if (!taskName || !dueDate || !description) {
       setError('Please fill in all required fields.');
       return;
     }
     setLoading(true);
     try {
-      // Prepare payload; using FormData if file upload is needed
       const formData = new FormData();
       formData.append('name', taskName);
       formData.append('dueDate', dueDate);
       formData.append('description', description);
       formData.append('status', status);
-      formData.append('assignedToId', assignedToId);
       formData.append('postId', id);
+      if (assignedToId) {
+        formData.append('assignedToId', assignedToId);
+      }
       if (attachment) {
         formData.append('attachment', attachment);
       }
-      // Send POST request to create task
       const response = await axios.post(
-        'http://localhost:5200/api/task/create',
+        'http://localhost:5200/api/tasks/create',
         formData,
         {
           headers: {
@@ -59,12 +61,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
 
   return (
     <div className='fixed inset-0 flex items-center justify-center z-50'>
-      {/* Semi-transparent backdrop */}
+      {/* Backdrop */}
       <div
         className='absolute inset-0 bg-black opacity-50'
         onClick={onClose}
       ></div>
-      {/* Modal content */}
+      {/* Modal Content */}
       <div className='bg-white rounded-lg shadow-lg z-10 p-6 w-full max-w-md'>
         <h2 className='text-xl font-bold mb-4'>Create New Task</h2>
         {error && <p className='text-red-500 mb-4'>{error}</p>}
@@ -107,15 +109,20 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
           </div>
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Assign To (Member ID)
+              Assign To (Team Member)
             </label>
-            <input
-              type='text'
+            <select
               value={assignedToId}
               onChange={e => setAssignedToId(e.target.value)}
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
-              placeholder='Enter team member ID'
-            />
+            >
+              <option value=''>-- None --</option>
+              {teamMembers.map(member => (
+                <option key={member.id} value={member.id}>
+                  {member.name} ({member.role})
+                </option>
+              ))}
+            </select>
           </div>
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
@@ -165,7 +172,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated }) => {
 
 CreateTaskModal.propTypes = {
   onClose: PropTypes.func.isRequired,
-  onTaskCreated: PropTypes.func.isRequired
+  onTaskCreated: PropTypes.func.isRequired,
+  teamMembers: PropTypes.array.isRequired
+};
+
+CreateTaskModal.defaultProps = {
+  teamMembers: []
 };
 
 export default CreateTaskModal;

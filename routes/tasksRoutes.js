@@ -6,11 +6,17 @@ import {
   getTasksForPost
 } from '../controllers/tasksController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
+import upload from '../middleware/multerMiddleware.js';
 
 const router = Router();
 
 // Create a new task
-router.post('/create', authenticateUser, createTask);
+router.post(
+  '/create',
+  authenticateUser,
+  upload.single('attachment'),
+  createTask
+);
 
 // Update a task (you can also use PUT if you prefer)
 router.patch('/:id', authenticateUser, updateTask);
