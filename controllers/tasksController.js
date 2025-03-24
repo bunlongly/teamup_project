@@ -23,6 +23,7 @@ const uploadImageToCloudinary = async base64Image => {
 };
 
 // Create a new task for a project
+// controllers/tasksController.js
 export const createTask = async (req, res) => {
   const {
     name,
@@ -63,6 +64,7 @@ export const createTask = async (req, res) => {
 
   try {
     const task = await prisma.task.create({
+      
       data: {
         name,
         description,
@@ -73,7 +75,9 @@ export const createTask = async (req, res) => {
         link,
         postId,
         ...(assignedToId && { assignedToId })
-      }
+      },
+      // Include the assignedTo relation so the response contains the full user info
+      include: { assignedTo: true }
     });
 
     return successResponse(res, 'Task created successfully', task);
@@ -87,10 +91,13 @@ export const createTask = async (req, res) => {
   }
 };
 
+
+
 // Update an existing task
 export const updateTask = async (req, res) => {
   const { id } = req.params;
-  const { name, dueDate, attachment, status, assignedToId, description, link } = req.body;
+  const { name, dueDate, attachment, status, assignedToId, description, link } =
+    req.body;
 
   try {
     const task = await prisma.task.update({
@@ -102,7 +109,7 @@ export const updateTask = async (req, res) => {
         status,
         assignedToId,
         description,
-        link,
+        link
       }
     });
 
@@ -117,13 +124,12 @@ export const updateTask = async (req, res) => {
   }
 };
 
-
 // Delete an existing task
 export const deleteTask = async (req, res) => {
   const { id } = req.params;
   try {
     const deletedTask = await prisma.task.delete({
-      where: { id },
+      where: { id }
     });
     return successResponse(res, 'Task deleted successfully', deletedTask);
   } catch (error) {
@@ -135,7 +141,6 @@ export const deleteTask = async (req, res) => {
     );
   }
 };
-
 
 // Get all tasks for a given project (post)
 export const getTasksForPost = async (req, res) => {

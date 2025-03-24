@@ -1,94 +1,72 @@
-// CreateTaskModal.jsx
-import React, { useState, useEffect } from 'react';
+// EditTaskModal.jsx
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
-import { useParams } from 'react-router-dom';
 
-// Helper to format a date string for display
+// Helper to format date for display
 const formatDateDisplay = dateString => {
   if (!dateString) return 'N/A';
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString(undefined, options);
 };
 
-const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
-  const { id } = useParams(); // project ID from URL (should match project.id)
-  const token = localStorage.getItem('token');
-
-  // Form fields
-  const [taskName, setTaskName] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [description, setDescription] = useState('');
-  const [assignedToId, setAssignedToId] = useState('');
-  const [status, setStatus] = useState('REVIEW');
-  const [link, setLink] = useState('');
-  const [attachment, setAttachment] = useState(null);
-
-  // UI state
+const EditTaskModal = ({
+  task,
+  onClose,
+  onTaskUpdated,
+  teamMembers,
+  project
+}) => {
+  // Initialize state from the task prop
+  const [taskName, setTaskName] = useState(task.name);
+  const [startDate, setStartDate] = useState(
+    task.startDate ? task.startDate.slice(0, 10) : ''
+  );
+  const [endDate, setEndDate] = useState(
+    task.endDate ? task.endDate.slice(0, 10) : ''
+  );
+  const [description, setDescription] = useState(task.description);
+  const [assignedToId, setAssignedToId] = useState(
+    task.assignedTo ? task.assignedTo.id : ''
+  );
+  const [status, setStatus] = useState(task.status);
+  const [link, setLink] = useState(task.link || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [daysBetween, setDaysBetween] = useState('');
 
-  // Immediate validation for start date
-  const handleStartDateChange = value => {
-    setStartDate(value);
-    if (project && project.startDate) {
+  // Validate start date immediately on change
+  useEffect(() => {
+    if (project && project.startDate && startDate) {
       const projectStart = new Date(project.startDate);
-      const userStart = new Date(value);
-      if (userStart < projectStart) {
+      const newStart = new Date(startDate);
+      if (newStart < projectStart) {
         setError(
           `Task start date cannot be before project start date (${formatDateDisplay(
             project.startDate
           )}).`
         );
-      } else {
-        // Clear only start-date related error if the date becomes valid
-        if (error.includes('Task start date')) {
-          setError('');
-        }
+      } else if (error.includes('Task start date')) {
+        setError('');
       }
     }
-  };
+  }, [startDate, project, error]);
 
-  // Immediate validation for end date
-  const handleEndDateChange = value => {
-    setEndDate(value);
-    if (project && project.endDate) {
+  // Validate end date immediately on change
+  useEffect(() => {
+    if (project && project.endDate && endDate) {
       const projectEnd = new Date(project.endDate);
-      const userEnd = new Date(value);
-      if (userEnd > new Date(project.endDate)) {
+      const newEnd = new Date(endDate);
+      if (newEnd > projectEnd) {
         setError(
           `Task end date cannot be after project end date (${formatDateDisplay(
             project.endDate
           )}).`
         );
-      } else {
-        if (error.includes('Task end date')) {
-          setError('');
-        }
+      } else if (error.includes('Task end date')) {
+        setError('');
       }
     }
-  };
+  }, [endDate, project, error]);
 
-  // Compute task duration if both dates are valid and no date error is present
-  useEffect(() => {
-    if (startDate && endDate && !error) {
-      const s = new Date(startDate);
-      const e = new Date(endDate);
-      if (e >= s) {
-        const diffInMs = e - s;
-        const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24)) + 1;
-        setDaysBetween(`${diffInDays} day${diffInDays > 1 ? 's' : ''}`);
-      } else {
-        setDaysBetween('');
-      }
-    } else {
-      setDaysBetween('');
-    }
-  }, [startDate, endDate, error]);
-
-  // Form submit handler
   const handleSubmit = async e => {
     e.preventDefault();
     setError('');
@@ -98,7 +76,8 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
       setError('Please fill in all required fields.');
       return;
     }
-    // Final check on date validity
+
+    // Final date validations
     if (
       project &&
       project.startDate &&
@@ -126,39 +105,33 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
 
     setLoading(true);
     try {
-      // Prepare payload (using FormData for file support)
-      const formData = new FormData();
-      formData.append('name', taskName);
-      formData.append('startDate', startDate);
-      formData.append('endDate', endDate);
-      formData.append('description', description);
-      formData.append('status', status);
-      formData.append('link', link);
-      formData.append('postId', id); // project ID from URL
-      if (assignedToId) {
-        formData.append('assignedToId', assignedToId);
-      }
-      if (attachment) {
-        formData.append('attachment', attachment);
-      }
-
-      // Send POST request to create the task
-      const response = await axios.post(
-        'http://localhost:5200/api/tasks/create',
-        formData,
+      const response = await fetch(
+        `http://localhost:5200/api/tasks/update/${task.id}`,
         {
+          method: 'PUT',
           headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: taskName,
+            startDate,
+            endDate,
+            description,
+            status,
+            link,
+            assignedToId: assignedToId || null
+          })
         }
       );
-      onTaskCreated(response.data.data);
-      // alert('Task created successfully!');
+      if (!response.ok) throw new Error('Failed to update task');
+      const updatedTask = await response.json();
+      onTaskUpdated(updatedTask.data);
+      alert('Task updated successfully!');
       onClose();
     } catch (err) {
-      console.error('Error creating task:', err);
-      setError('Failed to create task.');
+      console.error('Error updating task:', err);
+      setError('Failed to update task.');
     } finally {
       setLoading(false);
     }
@@ -173,13 +146,13 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
       ></div>
       {/* Modal Content */}
       <div className='bg-white rounded-lg shadow-lg z-10 p-6 w-full max-w-md'>
-        <h2 className='text-xl font-bold mb-4'>Create New Task</h2>
+        <h2 className='text-xl font-bold mb-4'>Edit Task</h2>
         {error && <p className='text-red-500 mb-4'>{error}</p>}
         <form onSubmit={handleSubmit}>
           {/* Task Name */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Task Name <span className='text-red-500'>*</span>
+              Task Name
             </label>
             <input
               type='text'
@@ -192,12 +165,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
           {/* Start Date */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Start Date <span className='text-red-500'>*</span>
+              Start Date
             </label>
             <input
               type='date'
               value={startDate}
-              onChange={e => handleStartDateChange(e.target.value)}
+              onChange={e => setStartDate(e.target.value)}
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
               required
             />
@@ -205,26 +178,20 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
           {/* End Date */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              End Date <span className='text-red-500'>*</span>
+              End Date
             </label>
             <input
               type='date'
               value={endDate}
-              onChange={e => handleEndDateChange(e.target.value)}
+              onChange={e => setEndDate(e.target.value)}
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
               required
             />
           </div>
-          {/* Display Task Duration */}
-          {daysBetween && (
-            <p className='text-gray-600 text-sm mb-4'>
-              Task Duration: {daysBetween}
-            </p>
-          )}
           {/* Task Description */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Task Description <span className='text-red-500'>*</span>
+              Task Description
             </label>
             <textarea
               value={description}
@@ -237,7 +204,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
           {/* Assign To */}
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Assign To (Select Member)
+              Assign To
             </label>
             <select
               value={assignedToId}
@@ -248,10 +215,9 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
               {teamMembers &&
                 teamMembers.map(member => (
                   <option key={member.id} value={member.id}>
-                    {member.firstName} {member.lastName}{' '}
-                    {member.jobTitle
-                      ? `(${member.jobTitle})`
-                      : `(${member.role})`}
+                    {member.firstName
+                      ? `${member.firstName} ${member.lastName}`
+                      : member.name}
                   </option>
                 ))}
             </select>
@@ -285,17 +251,6 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
             />
           </div>
-          {/* Attachment (Optional) */}
-          <div className='mb-4'>
-            <label className='block text-sm font-medium text-gray-700'>
-              Attachment (Optional)
-            </label>
-            <input
-              type='file'
-              onChange={e => setAttachment(e.target.files[0])}
-              className='mt-1 block w-full'
-            />
-          </div>
           {/* Buttons */}
           <div className='flex justify-end'>
             <button
@@ -310,7 +265,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
               disabled={loading}
               className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
             >
-              {loading ? 'Creating Task...' : 'Create Task'}
+              {loading ? 'Updating Task...' : 'Update Task'}
             </button>
           </div>
         </form>
@@ -319,11 +274,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
   );
 };
 
-CreateTaskModal.propTypes = {
+EditTaskModal.propTypes = {
+  task: PropTypes.object.isRequired,
   onClose: PropTypes.func.isRequired,
-  onTaskCreated: PropTypes.func.isRequired,
+  onTaskUpdated: PropTypes.func.isRequired,
   teamMembers: PropTypes.array.isRequired,
   project: PropTypes.object.isRequired
 };
 
-export default CreateTaskModal;
+export default EditTaskModal;

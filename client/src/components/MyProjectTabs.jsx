@@ -1,10 +1,12 @@
 // MyProjectTabs.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
 import CreateTaskModal from './CreateTaskModal';
+import DeleteTaskModal from './DeleteTaskModal';
+import EditTaskModal from './EditTaskModal';
 
 const formatDate = dateString => {
   if (!dateString) return 'N/A';
@@ -24,7 +26,18 @@ function MyProjectTabs({
   const token = localStorage.getItem('token');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+
+  // Modal state variables
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [taskToEdit, setTaskToEdit] = useState(null);
+
+  // Filter state for tasks
+  const [taskFilter, setTaskFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [teamMemberFilter, setTeamMemberFilter] = useState('');
 
   // Fetch tasks for the current project
   useEffect(() => {
@@ -34,7 +47,7 @@ function MyProjectTabs({
           `http://localhost:5200/api/tasks/post/${project.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        console.log('Fetched tasks:', response.data.data); // Debug: log fetched tasks
+        console.log('Fetched tasks:', response.data.data);
         setTasks(response.data.data);
       } catch (err) {
         console.error('Error fetching tasks:', err);
@@ -47,10 +60,47 @@ function MyProjectTabs({
     }
   }, [project, token]);
 
-  // Callback when a new task is created from the modal
+  // Filter tasks based on name, status, and assigned team member
+  const filteredTasks = tasks.filter(task => {
+    const matchesName = task.name
+      .toLowerCase()
+      .includes(taskFilter.toLowerCase());
+    const matchesStatus = statusFilter ? task.status === statusFilter : true;
+    const matchesMember = teamMemberFilter
+      ? task.assignedTo && task.assignedTo.id === teamMemberFilter
+      : true;
+    return matchesName && matchesStatus && matchesMember;
+  });
+
+  // Handler for deleting a task with confirmation
+  const handleDeleteTask = async taskId => {
+    try {
+      await axios.delete(`http://localhost:5200/api/tasks/${taskId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTasks(prev => prev.filter(task => task.id !== taskId));
+      setShowDeleteModal(false);
+      alert('Task deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete task.');
+    }
+  };
+
+  // Handler for updating a task (called from EditTaskModal)
+  const handleUpdateTask = updatedTask => {
+    setTasks(prev =>
+      prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
+    );
+    setShowEditModal(false);
+    alert('Task updated successfully!');
+  };
+
+  // Callback when a new task is created from the CreateTaskModal
   const handleTaskCreated = newTask => {
     setTasks(prev => [...prev, newTask]);
     if (onTaskCreated) onTaskCreated(newTask);
+    alert('Task created successfully!');
   };
 
   return (
@@ -76,17 +126,17 @@ function MyProjectTabs({
 
       {activeTab === 'Task' ? (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task List & Create Task Button */}
+          {/* Left Column: Task List */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
               {loadingTasks ? (
                 <p className='text-gray-600'>Loading tasks...</p>
-              ) : tasks.length === 0 ? (
-                <p className='text-gray-600'>No tasks yet.</p>
+              ) : filteredTasks.length === 0 ? (
+                <p className='text-gray-600'>No tasks match the filter.</p>
               ) : (
                 <div className='space-y-2'>
-                  {tasks.map(task => (
+                  {filteredTasks.map(task => (
                     <div
                       key={task.id}
                       className='p-3 bg-gray-50 rounded flex flex-col sm:flex-row sm:items-center sm:justify-between'
@@ -106,43 +156,82 @@ function MyProjectTabs({
                             : 'N/A'}
                         </p>
                       </div>
-                      <div>
-                        {task.status === 'FINISHED' && (
-                          <span className='px-2 py-1 bg-green-600 text-white text-xs rounded-full'>
-                            Finished
-                          </span>
-                        )}
-                        {task.status === 'IN_PROGRESS' && (
-                          <span className='px-2 py-1 bg-blue-500 text-white text-xs rounded-full'>
-                            In Progress
-                          </span>
-                        )}
-                        {task.status === 'REVIEW' && (
-                          <span className='px-2 py-1 bg-yellow-500 text-white text-xs rounded-full'>
-                            Review
-                          </span>
-                        )}
-                        {task.status === 'BACKLOG' && (
-                          <span className='px-2 py-1 bg-gray-500 text-white text-xs rounded-full'>
-                            Backlog
-                          </span>
-                        )}
+                      <div className='flex space-x-2'>
+                        <button
+                          onClick={() => {
+                            setTaskToEdit(task);
+                            setShowEditModal(true);
+                          }}
+                          className='px-2 py-1 bg-yellow-500 text-white text-xs rounded cursor-pointer'
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => {
+                            setTaskToDelete(task);
+                            setShowDeleteModal(true);
+                          }}
+                          className='px-2 py-1 bg-red-600 text-white text-xs rounded cursor-pointer'
+                        >
+                          Delete
+                        </button>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <button
-              onClick={() => setShowModal(true)}
-              className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
-            >
-              + Create New Task
-            </button>
           </div>
 
-          {/* Right Column: Additional Info Panels */}
+          {/* Right Column: Filter Panel, Create Button, and Additional Info */}
           <div className='lg:col-span-4 space-y-4'>
+            {/* Filter Panel & Create New Task Button */}
+            <div className='bg-white rounded-md shadow p-4 mb-6'>
+              <h2 className='text-lg font-semibold mb-2'>Filter & Actions</h2>
+              <div className='flex flex-col space-y-3'>
+                <input
+                  type='text'
+                  placeholder='Filter by task name'
+                  value={taskFilter}
+                  onChange={e => setTaskFilter(e.target.value)}
+                  className='border rounded p-2'
+                />
+                <select
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                  className='border rounded p-2'
+                >
+                  <option value=''>All Statuses</option>
+                  <option value='BACKLOG'>Backlog</option>
+                  <option value='REVIEW'>Review</option>
+                  <option value='IN_PROGRESS'>In Progress</option>
+                  <option value='FINISHED'>Finished</option>
+                </select>
+                <select
+                  value={teamMemberFilter}
+                  onChange={e => setTeamMemberFilter(e.target.value)}
+                  className='border rounded p-2'
+                >
+                  <option value=''>All Team Members</option>
+                  {teamMembers &&
+                    teamMembers.map(member => (
+                      <option key={member.id} value={member.id}>
+                        {member.firstName
+                          ? `${member.firstName} ${member.lastName}`
+                          : member.name || 'No Name'}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+                >
+                  + Create New Task
+                </button>
+              </div>
+            </div>
+
+            {/* Additional Info Panels */}
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
               <div className='flex items-center mb-2'>
@@ -200,7 +289,7 @@ function MyProjectTabs({
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                 {teamMembers && teamMembers.length > 0 ? (
                   teamMembers
-                    .filter(member => member) // defensive filter
+                    .filter(member => member && member.id)
                     .map(member => (
                       <div
                         key={member.id}
@@ -225,6 +314,14 @@ function MyProjectTabs({
                   <p className='text-gray-600'>No team members found.</p>
                 )}
               </div>
+            </div>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-xl font-semibold mb-3'>
+                Add New Team Member
+              </h2>
+              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
+                + Add Member
+              </button>
             </div>
           </div>
           <div className='lg:col-span-4 space-y-4'>
@@ -277,13 +374,31 @@ function MyProjectTabs({
         </div>
       )}
 
-      {showModal && (
+      {/* Modals */}
+      {showCreateModal && (
         <CreateTaskModal
-          onClose={() => setShowModal(false)}
-          onTaskCreated={newTask => {
-            setTasks(prev => [...prev, newTask]);
-          }}
+          onClose={() => setShowCreateModal(false)}
+          onTaskCreated={handleTaskCreated}
           teamMembers={teamMembers}
+          project={project}
+        />
+      )}
+
+      {showDeleteModal && taskToDelete && (
+        <DeleteTaskModal
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={() => handleDeleteTask(taskToDelete.id)}
+          task={taskToDelete}
+        />
+      )}
+
+      {showEditModal && taskToEdit && (
+        <EditTaskModal
+          onClose={() => setShowEditModal(false)}
+          onTaskUpdated={handleUpdateTask}
+          task={taskToEdit}
+          teamMembers={teamMembers}
+          project={project}
         />
       )}
     </>
@@ -295,7 +410,8 @@ MyProjectTabs.propTypes = {
   setActiveTab: PropTypes.func.isRequired,
   teamMembers: PropTypes.array.isRequired,
   project: PropTypes.object.isRequired,
-  ownerName: PropTypes.string.isRequired
+  ownerName: PropTypes.string.isRequired,
+  onTaskCreated: PropTypes.func
 };
 
 export default MyProjectTabs;
