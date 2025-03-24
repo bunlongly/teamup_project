@@ -134,7 +134,10 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
               {teamMembers &&
                 teamMembers.map(member => (
                   <option key={member.id} value={member.id}>
-                    {member.name} ({member.role})
+                    {member.firstName} {member.lastName}{' '}
+                    {member.jobTitle
+                      ? `(${member.jobTitle})`
+                      : `(${member.role})`}
                   </option>
                 ))}
             </select>

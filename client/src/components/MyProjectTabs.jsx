@@ -18,8 +18,6 @@ function MyProjectTabs({
   teamMembers,
   project,
   ownerName,
-  // For creating a new task (if using a modal)
-  // (Assuming onTaskCreated callback will update tasks in the parent component)
   onTaskCreated
 }) {
   const navigate = useNavigate();
@@ -36,6 +34,7 @@ function MyProjectTabs({
           `http://localhost:5200/api/tasks/post/${project.id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log('Fetched tasks:', response.data.data); // Debug: log fetched tasks
         setTasks(response.data.data);
       } catch (err) {
         console.error('Error fetching tasks:', err);
@@ -77,7 +76,7 @@ function MyProjectTabs({
 
       {activeTab === 'Task' ? (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task List & Button */}
+          {/* Left Column: Task List & Create Task Button */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
@@ -103,9 +102,7 @@ function MyProjectTabs({
                         <p className='text-xs text-gray-500'>
                           Assigned to:{' '}
                           {task.assignedTo
-                            ? `${task.assignedTo.firstName || ''} ${
-                                task.assignedTo.lastName || ''
-                              }`
+                            ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
                             : 'N/A'}
                         </p>
                       </div>
@@ -220,7 +217,7 @@ function MyProjectTabs({
                             : member.name || 'No Name'}
                         </p>
                         <p className='text-xs text-gray-500'>
-                          {member.jobTitle || 'No job title'}
+                          {member.jobTitle || member.role || 'No job title'}
                         </p>
                       </div>
                     ))
@@ -228,14 +225,6 @@ function MyProjectTabs({
                   <p className='text-gray-600'>No team members found.</p>
                 )}
               </div>
-            </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>
-                Add New Team Member
-              </h2>
-              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
-                + Add Member
-              </button>
             </div>
           </div>
           <div className='lg:col-span-4 space-y-4'>
