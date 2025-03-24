@@ -1,5 +1,5 @@
 // MyProjectTabs.jsx
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -27,7 +27,7 @@ function MyProjectTabs({
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // Modal state variables
+  // Modal state variables and state for editing/deleting tasks
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -38,6 +38,7 @@ function MyProjectTabs({
   const [taskFilter, setTaskFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
+  const [displayCount, setDisplayCount] = useState(15);
 
   // Fetch tasks for the current project
   useEffect(() => {
@@ -72,6 +73,18 @@ function MyProjectTabs({
     return matchesName && matchesStatus && matchesMember;
   });
 
+  // Limit displayed tasks based on displayCount (for "View More" functionality)
+  const tasksToDisplay = filteredTasks.slice(0, displayCount);
+
+  // Compute task summary counts
+  const totalCount = tasks.length;
+  const backlogCount = tasks.filter(task => task.status === 'BACKLOG').length;
+  const reviewCount = tasks.filter(task => task.status === 'REVIEW').length;
+  const inProgressCount = tasks.filter(
+    task => task.status === 'IN_PROGRESS'
+  ).length;
+  const finishedCount = tasks.filter(task => task.status === 'FINISHED').length;
+
   // Handler for deleting a task with confirmation
   const handleDeleteTask = async taskId => {
     try {
@@ -87,7 +100,7 @@ function MyProjectTabs({
     }
   };
 
-  // Handler for updating a task (called from EditTaskModal)
+  // Handler for updating a task (from EditTaskModal)
   const handleUpdateTask = updatedTask => {
     setTasks(prev =>
       prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
@@ -136,7 +149,7 @@ function MyProjectTabs({
                 <p className='text-gray-600'>No tasks match the filter.</p>
               ) : (
                 <div className='space-y-2'>
-                  {filteredTasks.map(task => (
+                  {tasksToDisplay.map(task => (
                     <div
                       key={task.id}
                       className='p-3 bg-gray-50 rounded flex flex-col sm:flex-row sm:items-center sm:justify-between'
@@ -178,28 +191,49 @@ function MyProjectTabs({
                       </div>
                     </div>
                   ))}
+                  {filteredTasks.length > displayCount && (
+                    <button
+                      onClick={() => setDisplayCount(prev => prev + 5)}
+                      className='mt-4 px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition-colors'
+                    >
+                      View More
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Column: Filter Panel, Create Button, and Additional Info */}
+          {/* Right Column: Filter Panel, Summary, and Project Overview */}
           <div className='lg:col-span-4 space-y-4'>
-            {/* Filter Panel & Create New Task Button */}
-            <div className='bg-white rounded-md shadow p-4 mb-6'>
-              <h2 className='text-lg font-semibold mb-2'>Filter & Actions</h2>
-              <div className='flex flex-col space-y-3'>
+            {/* Filter & Summary Panel */}
+            <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4'>
+              <div className='flex items-center justify-between mb-3'>
+                <h2 className='text-lg font-semibold'>Task Summary</h2>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className='px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-200 transition-colors'
+                >
+                  + New Task
+                </button>
+              </div>
+              <p>Total Tasks: {totalCount}</p>
+              <p>Backlog: {backlogCount}</p>
+              <p>Review: {reviewCount}</p>
+              <p>In Progress: {inProgressCount}</p>
+              <p>Finished: {finishedCount}</p>
+              <div className='mt-4 flex flex-col space-y-3'>
                 <input
                   type='text'
                   placeholder='Filter by task name'
                   value={taskFilter}
                   onChange={e => setTaskFilter(e.target.value)}
-                  className='border rounded p-2'
+                  className='border rounded p-2 text-white'
                 />
                 <select
                   value={statusFilter}
                   onChange={e => setStatusFilter(e.target.value)}
-                  className='border rounded p-2'
+                  className='border rounded p-2 text-white'
                 >
                   <option value=''>All Statuses</option>
                   <option value='BACKLOG'>Backlog</option>
@@ -210,7 +244,7 @@ function MyProjectTabs({
                 <select
                   value={teamMemberFilter}
                   onChange={e => setTeamMemberFilter(e.target.value)}
-                  className='border rounded p-2'
+                  className='border rounded p-2 text-white'
                 >
                   <option value=''>All Team Members</option>
                   {teamMembers &&
@@ -222,16 +256,10 @@ function MyProjectTabs({
                       </option>
                     ))}
                 </select>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
-                >
-                  + Create New Task
-                </button>
               </div>
             </div>
 
-            {/* Additional Info Panels */}
+            {/* Project Overview Panel */}
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
               <div className='flex items-center mb-2'>
@@ -271,6 +299,8 @@ function MyProjectTabs({
                 </div>
               </div>
             </div>
+
+            {/* Team Status Panel */}
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
               <p className='text-sm text-gray-600'>
