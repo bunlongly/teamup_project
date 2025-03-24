@@ -7,6 +7,7 @@ import fallbackLogo from '../assets/logo.png';
 import CreateTaskModal from './CreateTaskModal';
 import DeleteTaskModal from './DeleteTaskModal';
 import EditTaskModal from './EditTaskModal';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 const formatDate = dateString => {
   if (!dateString) return 'N/A';
@@ -85,7 +86,7 @@ function MyProjectTabs({
   ).length;
   const finishedCount = tasks.filter(task => task.status === 'FINISHED').length;
 
-  // Handler for deleting a task with confirmation
+  // Handler for deleting a task
   const handleDeleteTask = async taskId => {
     try {
       await axios.delete(`http://localhost:5200/api/tasks/${taskId}`, {
@@ -100,7 +101,7 @@ function MyProjectTabs({
     }
   };
 
-  // Handler for updating a task (from EditTaskModal)
+  // Handler for updating a task (called from EditTaskModal)
   const handleUpdateTask = updatedTask => {
     setTasks(prev =>
       prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
@@ -152,7 +153,8 @@ function MyProjectTabs({
                   {tasksToDisplay.map(task => (
                     <div
                       key={task.id}
-                      className='p-3 bg-gray-50 rounded flex flex-col sm:flex-row sm:items-center sm:justify-between'
+                      className='p-3 bg-gray-50 rounded flex flex-col sm:flex-row sm:items-center sm:justify-between cursor-pointer'
+                      onClick={() => navigate(`/task/${task.id}`)}
                     >
                       <div className='mb-2 sm:mb-0'>
                         <p className='font-medium text-gray-700'>{task.name}</p>
@@ -168,25 +170,32 @@ function MyProjectTabs({
                             ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
                             : 'N/A'}
                         </p>
+                        <p className='text-xs text-gray-500'>
+                          Status: {task.status}
+                        </p>
                       </div>
                       <div className='flex space-x-2'>
                         <button
-                          onClick={() => {
+                          onClick={e => {
+                            e.stopPropagation();
                             setTaskToEdit(task);
                             setShowEditModal(true);
                           }}
-                          className='px-2 py-1 bg-yellow-500 text-white text-xs rounded cursor-pointer'
+                          className='px-2 py-1 bg-yellow-500 text-white text-xs rounded flex items-center justify-center'
+                          title='Edit Task'
                         >
-                          Edit
+                          <FaEdit />
                         </button>
                         <button
-                          onClick={() => {
+                          onClick={e => {
+                            e.stopPropagation();
                             setTaskToDelete(task);
                             setShowDeleteModal(true);
                           }}
-                          className='px-2 py-1 bg-red-600 text-white text-xs rounded cursor-pointer'
+                          className='px-2 py-1 bg-red-600 text-white text-xs rounded flex items-center justify-center'
+                          title='Delete Task'
                         >
-                          Delete
+                          <FaTrash />
                         </button>
                       </div>
                     </div>
@@ -207,7 +216,7 @@ function MyProjectTabs({
           {/* Right Column: Filter Panel, Summary, and Project Overview */}
           <div className='lg:col-span-4 space-y-4'>
             {/* Filter & Summary Panel */}
-            <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4'>
+            <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4 mb-6'>
               <div className='flex items-center justify-between mb-3'>
                 <h2 className='text-lg font-semibold'>Task Summary</h2>
                 <button
