@@ -3,7 +3,8 @@ import { Router } from 'express';
 import {
   createTask,
   updateTask,
-  getTasksForPost
+  getTasksForPost,
+  deleteTask
 } from '../controllers/tasksController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
@@ -19,7 +20,13 @@ router.post(
 );
 
 // Update a task (you can also use PUT if you prefer)
-router.patch('/:id', authenticateUser, updateTask);
+router.put(
+  '/update/:id',
+  authenticateUser,
+  upload.single('attachment'),
+  updateTask
+);
+router.delete('/:id', authenticateUser, deleteTask);
 
 // Get tasks for a specific project/post
 router.get('/post/:postId', authenticateUser, getTasksForPost);

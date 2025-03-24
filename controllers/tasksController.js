@@ -90,7 +90,7 @@ export const createTask = async (req, res) => {
 // Update an existing task
 export const updateTask = async (req, res) => {
   const { id } = req.params;
-  const { name, dueDate, attachment, status, assignedToId } = req.body;
+  const { name, dueDate, attachment, status, assignedToId, description, link } = req.body;
 
   try {
     const task = await prisma.task.update({
@@ -100,7 +100,9 @@ export const updateTask = async (req, res) => {
         dueDate: dueDate ? new Date(dueDate) : undefined,
         attachment,
         status,
-        assignedToId
+        assignedToId,
+        description,
+        link,
       }
     });
 
@@ -114,6 +116,26 @@ export const updateTask = async (req, res) => {
     );
   }
 };
+
+
+// Delete an existing task
+export const deleteTask = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedTask = await prisma.task.delete({
+      where: { id },
+    });
+    return successResponse(res, 'Task deleted successfully', deletedTask);
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error deleting task'
+    );
+  }
+};
+
 
 // Get all tasks for a given project (post)
 export const getTasksForPost = async (req, res) => {
