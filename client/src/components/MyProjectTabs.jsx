@@ -1,7 +1,8 @@
+// MyProjectTabs.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
 import CreateTaskModal from './CreateTaskModal';
 
@@ -19,29 +20,36 @@ function MyProjectTabs({
   ownerName
 }) {
   const navigate = useNavigate();
-  const [tasks, setTasks] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const token = localStorage.getItem('token');
+  const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+  const [showModal, setShowModal] = useState(false);
 
-  // Fetch tasks for the project
+  // Function to fetch tasks for the current project
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5200/api/tasks/post/${project.id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setTasks(response.data.data);
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5200/api/tasks/post/${project.id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
-        );
-        setTasks(response.data.data);
-      } catch (err) {
-        console.error('Error fetching tasks:', err);
-      }
-    };
     if (project && project.id) {
       fetchTasks();
     }
   }, [project, token]);
+
+  // Callback when a new task is created
+  const handleTaskCreated = newTask => {
+    setTasks(prev => [...prev, newTask]);
+  };
 
   return (
     <>
@@ -66,11 +74,13 @@ function MyProjectTabs({
 
       {activeTab === 'Task' ? (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task Info & Button to open Create Task Modal */}
+          {/* Left Column: Task List & Button */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
-              {tasks.length === 0 ? (
+              {loadingTasks ? (
+                <p className='text-gray-600'>Loading tasks...</p>
+              ) : tasks.length === 0 ? (
                 <p className='text-gray-600'>No tasks yet.</p>
               ) : (
                 <div className='space-y-2'>
@@ -82,7 +92,10 @@ function MyProjectTabs({
                       <div className='mb-2 sm:mb-0'>
                         <p className='font-medium text-gray-700'>{task.name}</p>
                         <p className='text-xs text-gray-500'>
-                          Due: {formatDate(task.dueDate)}
+                          Start: {formatDate(task.startDate)}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          End: {formatDate(task.endDate)}
                         </p>
                         <p className='text-xs text-gray-500'>
                           Assigned to: {task.assignedTo?.firstName}{' '}
@@ -103,6 +116,11 @@ function MyProjectTabs({
                         {task.status === 'REVIEW' && (
                           <span className='px-2 py-1 bg-yellow-500 text-white text-xs rounded-full'>
                             Review
+                          </span>
+                        )}
+                        {task.status === 'BACKLOG' && (
+                          <span className='px-2 py-1 bg-gray-500 text-white text-xs rounded-full'>
+                            Backlog
                           </span>
                         )}
                       </div>
@@ -246,6 +264,7 @@ function MyProjectTabs({
           </div>
         </div>
       )}
+
       {showModal && (
         <CreateTaskModal
           onClose={() => setShowModal(false)}

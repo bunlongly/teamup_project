@@ -24,13 +24,33 @@ const uploadImageToCloudinary = async base64Image => {
 
 // Create a new task for a project
 export const createTask = async (req, res) => {
-  // Handle file upload if present, and store the URL in attachmentUrl.
-  let attachmentUrl = null;
+  const {
+    name,
+    startDate,
+    endDate,
+    description,
+    status,
+    link,
+    assignedToId,
+    postId
+  } = req.body;
+
+  // Validate required fields
+  if (!name || !startDate || !endDate || !description || !postId) {
+    return errorResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      'Missing required fields: name, startDate, endDate, description, and postId are required.'
+    );
+  }
+
+  // Process file upload if provided
+  let attachment = null;
   if (req.file) {
     try {
       const base64Image = formatImage(req.file);
       const { secure_url } = await uploadImageToCloudinary(base64Image);
-      attachmentUrl = secure_url;
+      attachment = secure_url;
     } catch (err) {
       console.error('Error uploading file:', err);
       return errorResponse(
@@ -41,24 +61,18 @@ export const createTask = async (req, res) => {
     }
   }
 
-  // Destructure fields from the request body.
-  const { name, dueDate, status, assignedToId, postId, description } = req.body;
-
-  // Ensure that required fields are provided.
-  if (!name) {
-    return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task name is required');
-  }
-
   try {
     const task = await prisma.task.create({
       data: {
         name,
         description,
-        dueDate: dueDate ? new Date(dueDate) : null,
-        attachment: attachmentUrl,
-        status, // Defaults in schema if not provided
-        assignedToId,
-        postId
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        attachment,
+        status,
+        link,
+        postId,
+        ...(assignedToId && { assignedToId })
       }
     });
 

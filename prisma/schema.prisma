@@ -196,12 +196,14 @@ enum ApplicationStatus {
 model Task {
   id           String     @id @default(uuid())
   name         String
-  dueDate      DateTime?
-  description String
+  startDate    DateTime?  // New field
+  endDate      DateTime?  // New field
+  description  String
   attachment   String?    // URL to the uploaded image (if any)
   status       TaskStatus @default(IN_PROGRESS)
   assignedToId String?    // Optional: the ID of the team member assigned
   postId       String     // The project ID (related to Post)
+  link         String?    // New optional field for a link
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -212,6 +214,7 @@ model Task {
 }
 
 enum TaskStatus {
+  BACKLOG
   REVIEW
   IN_PROGRESS
   FINISHED

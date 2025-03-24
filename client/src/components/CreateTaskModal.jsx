@@ -2,26 +2,26 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
   const { id } = useParams(); // project ID
   const token = localStorage.getItem('token');
-  const navigate = useNavigate();
 
   const [taskName, setTaskName] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [description, setDescription] = useState('');
   const [assignedToId, setAssignedToId] = useState('');
-  const [status, setStatus] = useState('REVIEW'); // default status
+  const [status, setStatus] = useState('REVIEW');
+  const [link, setLink] = useState('');
   const [attachment, setAttachment] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async e => {
     e.preventDefault();
-    // Validate required fields
-    if (!taskName || !dueDate || !description) {
+    if (!taskName || !startDate || !endDate || !description) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -29,9 +29,11 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
     try {
       const formData = new FormData();
       formData.append('name', taskName);
-      formData.append('dueDate', dueDate);
+      formData.append('startDate', startDate);
+      formData.append('endDate', endDate);
       formData.append('description', description);
       formData.append('status', status);
+      formData.append('link', link);
       formData.append('postId', id);
       if (assignedToId) {
         formData.append('assignedToId', assignedToId);
@@ -61,12 +63,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
 
   return (
     <div className='fixed inset-0 flex items-center justify-center z-50'>
-      {/* Backdrop */}
+      {/* Semi-transparent backdrop */}
       <div
         className='absolute inset-0 bg-black opacity-50'
         onClick={onClose}
       ></div>
-      {/* Modal Content */}
+      {/* Modal content */}
       <div className='bg-white rounded-lg shadow-lg z-10 p-6 w-full max-w-md'>
         <h2 className='text-xl font-bold mb-4'>Create New Task</h2>
         {error && <p className='text-red-500 mb-4'>{error}</p>}
@@ -85,12 +87,24 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
           </div>
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Due Date
+              Start Date
             </label>
             <input
               type='date'
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
+              value={startDate}
+              onChange={e => setStartDate(e.target.value)}
+              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
+              required
+            />
+          </div>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700'>
+              End Date
+            </label>
+            <input
+              type='date'
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
               required
             />
@@ -109,7 +123,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
           </div>
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
-              Assign To (Team Member)
+              Assign To (Select Member)
             </label>
             <select
               value={assignedToId}
@@ -117,11 +131,12 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
             >
               <option value=''>-- None --</option>
-              {teamMembers.map(member => (
-                <option key={member.id} value={member.id}>
-                  {member.name} ({member.role})
-                </option>
-              ))}
+              {teamMembers &&
+                teamMembers.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.role})
+                  </option>
+                ))}
             </select>
           </div>
           <div className='mb-4'>
@@ -136,7 +151,20 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers }) => {
               <option value='REVIEW'>Review</option>
               <option value='IN_PROGRESS'>In Progress</option>
               <option value='FINISHED'>Finished</option>
+              <option value='BACKLOG'>Backlog</option>
             </select>
+          </div>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700'>
+              Link (Optional)
+            </label>
+            <input
+              type='text'
+              value={link}
+              onChange={e => setLink(e.target.value)}
+              placeholder='Enter a link (e.g., URL to design specs)'
+              className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
+            />
           </div>
           <div className='mb-4'>
             <label className='block text-sm font-medium text-gray-700'>
@@ -174,10 +202,6 @@ CreateTaskModal.propTypes = {
   onClose: PropTypes.func.isRequired,
   onTaskCreated: PropTypes.func.isRequired,
   teamMembers: PropTypes.array.isRequired
-};
-
-CreateTaskModal.defaultProps = {
-  teamMembers: []
 };
 
 export default CreateTaskModal;
