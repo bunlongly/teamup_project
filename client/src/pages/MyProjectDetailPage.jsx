@@ -12,6 +12,9 @@ function MyProjectDetailPage() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
+  const userId = localStorage.getItem('userId'); 
+  const currentUser = { id: userId };
+
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -257,6 +260,7 @@ function MyProjectDetailPage() {
         setNewTaskAssignedTo={setNewTaskAssignedTo}
         newTaskStatus={newTaskStatus}
         setNewTaskStatus={setNewTaskStatus}
+        currentUser={currentUser}
         handleAddTask={() => {
           if (
             !newTaskName ||
@@ -277,6 +281,7 @@ function MyProjectDetailPage() {
             assignedTo: newTaskAssignedTo
           };
           setTasks(prev => [...prev, newTask]);
+          
           // Clear form fields.
           setNewTaskName('');
           setNewTaskDueDate('');

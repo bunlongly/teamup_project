@@ -1,4 +1,3 @@
-// MyProjectTabs.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
@@ -21,14 +20,15 @@ function MyProjectTabs({
   teamMembers,
   project,
   ownerName,
-  onTaskCreated
+  onTaskCreated,
+  currentUser // NEW prop added
 }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // Modal state variables and state for editing/deleting tasks
+  // Modal state variables for editing/deleting tasks
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -40,6 +40,24 @@ function MyProjectTabs({
   const [statusFilter, setStatusFilter] = useState('');
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
   const [displayCount, setDisplayCount] = useState(15);
+
+  // Safely determine if the current user is the owner of the project
+  const currentUserId = currentUser?.id || currentUser?.userId || '';
+  const ownerId = project?.user?.id || '';
+  const isOwner =
+    currentUserId && ownerId && String(currentUserId) === String(ownerId);
+
+  // Debug logging for owner check
+  console.log('currentUser:', currentUser);
+  console.log('project.user:', project?.user);
+  console.log(
+    'currentUserId:',
+    currentUserId,
+    'ownerId:',
+    ownerId,
+    'isOwner:',
+    isOwner
+  );
 
   // Fetch tasks for the current project
   useEffect(() => {
@@ -68,13 +86,20 @@ function MyProjectTabs({
       .toLowerCase()
       .includes(taskFilter.toLowerCase());
     const matchesStatus = statusFilter ? task.status === statusFilter : true;
-    const matchesMember = teamMemberFilter
-      ? task.assignedTo && task.assignedTo.id === teamMemberFilter
-      : true;
+
+    let matchesMember = true;
+    if (teamMemberFilter) {
+      if (teamMemberFilter === 'notAssigned') {
+        matchesMember = !task.assignedTo;
+      } else {
+        matchesMember =
+          task.assignedTo && task.assignedTo.id === teamMemberFilter;
+      }
+    }
     return matchesName && matchesStatus && matchesMember;
   });
 
-  // Limit displayed tasks based on displayCount (for "View More" functionality)
+  // Limit displayed tasks based on displayCount
   const tasksToDisplay = filteredTasks.slice(0, displayCount);
 
   // Compute task summary counts
@@ -101,7 +126,7 @@ function MyProjectTabs({
     }
   };
 
-  // Handler for updating a task (called from EditTaskModal)
+  // Handler for updating a task
   const handleUpdateTask = updatedTask => {
     setTasks(prev =>
       prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
@@ -110,7 +135,7 @@ function MyProjectTabs({
     alert('Task updated successfully!');
   };
 
-  // Callback when a new task is created from the CreateTaskModal
+  // Callback when a new task is created
   const handleTaskCreated = newTask => {
     setTasks(prev => [...prev, newTask]);
     if (onTaskCreated) onTaskCreated(newTask);
@@ -151,7 +176,7 @@ function MyProjectTabs({
               ) : (
                 <div className='space-y-2'>
                   {tasksToDisplay.map(task => {
-                    // Define a mapping for status to badge classes
+                    // Mapping of status to color classes
                     const statusColors = {
                       BACKLOG: 'bg-yellow-100 text-yellow-800',
                       REVIEW: 'bg-purple-100 text-purple-800',
@@ -190,34 +215,36 @@ function MyProjectTabs({
                             </span>
                           </div>
                         </div>
-                        <div className='flex space-x-2'>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setTaskToEdit(task);
-                              setShowEditModal(true);
-                            }}
-                            className='px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors'
-                            title='Edit Task'
-                          >
-                            <FaEdit />
-                          </button>
-                          <button
-                            onClick={e => {
-                              e.stopPropagation();
-                              setTaskToDelete(task);
-                              setShowDeleteModal(true);
-                            }}
-                            className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors'
-                            title='Delete Task'
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
+                        {/* Only show edit & delete buttons if current user is the owner */}
+                        {isOwner && (
+                          <div className='flex space-x-2'>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setTaskToEdit(task);
+                                setShowEditModal(true);
+                              }}
+                              className='px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors'
+                              title='Edit Task'
+                            >
+                              <FaEdit />
+                            </button>
+                            <button
+                              onClick={e => {
+                                e.stopPropagation();
+                                setTaskToDelete(task);
+                                setShowDeleteModal(true);
+                              }}
+                              className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors'
+                              title='Delete Task'
+                            >
+                              <FaTrash />
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
-
                   {filteredTasks.length > displayCount && (
                     <button
                       onClick={() => setDisplayCount(prev => prev + 5)}
@@ -237,18 +264,38 @@ function MyProjectTabs({
             <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4 mb-6'>
               <div className='flex items-center justify-between mb-3'>
                 <h2 className='text-lg font-semibold'>Task Summary</h2>
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className='px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-200 transition-colors'
-                >
-                  + New Task
-                </button>
+                {/* Only show the "+ New Task" button if current user is the owner */}
+                {isOwner && (
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className='px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-200 transition-colors'
+                  >
+                    + New Task
+                  </button>
+                )}
               </div>
-              <p>Total Tasks: {totalCount}</p>
-              <p>Backlog: {backlogCount}</p>
-              <p>Review: {reviewCount}</p>
-              <p>In Progress: {inProgressCount}</p>
-              <p>Finished: {finishedCount}</p>
+              <div className='space-y-2'>
+                <div className='flex justify-between border-b border-blue-300 pb-1'>
+                  <span>Total Tasks:</span>
+                  <span className='font-bold'>{totalCount}</span>
+                </div>
+                <div className='flex justify-between border-b border-blue-300 pb-1'>
+                  <span>Backlog:</span>
+                  <span className='font-bold'>{backlogCount}</span>
+                </div>
+                <div className='flex justify-between border-b border-blue-300 pb-1'>
+                  <span>Review:</span>
+                  <span className='font-bold'>{reviewCount}</span>
+                </div>
+                <div className='flex justify-between border-b border-blue-300 pb-1'>
+                  <span>In Progress:</span>
+                  <span className='font-bold'>{inProgressCount}</span>
+                </div>
+                <div className='flex justify-between'>
+                  <span>Finished:</span>
+                  <span className='font-bold'>{finishedCount}</span>
+                </div>
+              </div>
               <div className='mt-4 flex flex-col space-y-3'>
                 <input
                   type='text'
@@ -274,6 +321,7 @@ function MyProjectTabs({
                   className='border rounded p-2 text-white'
                 >
                   <option value=''>All Team Members</option>
+                  <option value='notAssigned'>Not Assigned</option>
                   {teamMembers &&
                     teamMembers.map(member => (
                       <option key={member.id} value={member.id}>
@@ -468,7 +516,8 @@ MyProjectTabs.propTypes = {
   teamMembers: PropTypes.array.isRequired,
   project: PropTypes.object.isRequired,
   ownerName: PropTypes.string.isRequired,
-  onTaskCreated: PropTypes.func
+  onTaskCreated: PropTypes.func,
+  currentUser: PropTypes.object.isRequired // NEW prop validation
 };
 
 export default MyProjectTabs;
