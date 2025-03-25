@@ -64,7 +64,6 @@ export const createTask = async (req, res) => {
 
   try {
     const task = await prisma.task.create({
-      
       data: {
         name,
         description,
@@ -90,8 +89,6 @@ export const createTask = async (req, res) => {
     );
   }
 };
-
-
 
 // Update an existing task
 export const updateTask = async (req, res) => {
@@ -167,20 +164,41 @@ export const getTasksForPost = async (req, res) => {
   }
 };
 
-
 export const getTaskById = async (req, res) => {
   const { id } = req.params;
+  const currentUser = req.user; // Make sure auth middleware sets req.user
+
   try {
     const task = await prisma.task.findUnique({
       where: { id },
       include: {
         assignedTo: true,
-        post: true
+        post: {
+          include: {
+            user: true // Include the project owner details
+          }
+        }
       }
     });
+
     if (!task) {
       return errorResponse(res, StatusCodes.NOT_FOUND, 'Task not found');
     }
+
+    // Use currentUser.userId if available
+    const currentUserId = currentUser.id || currentUser.userId;
+
+    // Convert IDs to strings to avoid type mismatches
+    const isOwner = String(currentUserId) === String(task.post.user.id);
+    const isAssigned = task.assignedTo
+      ? String(currentUserId) === String(task.assignedTo.id)
+      : false;
+
+    // Return a 404 if the user is neither the owner nor the assigned member.
+    if (!isOwner && !isAssigned) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Task not found');
+    }
+
     return successResponse(res, 'Task retrieved successfully', task);
   } catch (error) {
     console.error('Error fetching task:', error);

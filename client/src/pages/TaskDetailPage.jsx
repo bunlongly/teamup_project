@@ -1,4 +1,3 @@
-// TaskDetailPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -12,11 +11,11 @@ function TaskDetailPage() {
   // Task data and loading state
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Submissions (multiple links)
   const [submissionLinks, setSubmissionLinks] = useState([{ url: '' }]);
   const [submitMessage, setSubmitMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
   // Private comments
   const [privateComment, setPrivateComment] = useState('');
@@ -33,6 +32,12 @@ function TaskDetailPage() {
         setTask(response.data.data);
       } catch (error) {
         console.error('Error fetching task details:', error);
+        // If the error is a 404, set a custom error message indicating lack of authorization
+        if (error.response && error.response.status === 404) {
+          setErrorMessage('You are not authorized to view this task.');
+        } else {
+          setErrorMessage('An error occurred while fetching task details.');
+        }
       } finally {
         setLoading(false);
       }
@@ -70,12 +75,9 @@ function TaskDetailPage() {
     }
 
     try {
-      // Example POST to /tasks/:id/submit
       await axios.post(
         `http://localhost:5200/api/tasks/${id}/submit`,
-        {
-          links: submissionLinks.map(link => link.url)
-        },
+        { links: submissionLinks.map(link => link.url) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSubmitMessage('Task submitted successfully!');
@@ -90,7 +92,6 @@ function TaskDetailPage() {
     e.preventDefault();
     if (!privateComment.trim()) return;
 
-    // For demonstration, we push locally
     const newComment = {
       id: Date.now(),
       text: privateComment,
@@ -100,8 +101,22 @@ function TaskDetailPage() {
     setPrivateComment('');
   };
 
+  // Display loading, error, or the task details
   if (loading) {
     return <p className='p-4'>Loading task details...</p>;
+  }
+  if (errorMessage) {
+    return (
+      <div className='p-4'>
+        <p className='text-red-600'>{errorMessage}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className='mt-4 px-4 py-2 bg-blue-500 text-white rounded'
+        >
+          Go Back
+        </button>
+      </div>
+    );
   }
   if (!task) {
     return <p className='p-4'>Task not found.</p>;
@@ -252,7 +267,6 @@ function TaskDetailPage() {
                 Post
               </button>
             </form>
-            {/* Display existing private comments */}
             <div className='space-y-2'>
               {privateComments.map(c => (
                 <div key={c.id} className='bg-gray-50 p-2 rounded'>
@@ -273,10 +287,7 @@ function TaskDetailPage() {
         <div className='space-y-6'>
           <div className='bg-white rounded-md shadow p-4'>
             <h2 className='text-lg font-semibold mb-2'>Your work</h2>
-            {/* Example status - "Assigned", "Submitted", etc. */}
             <p className='text-sm text-green-600 mb-4'>Assigned</p>
-
-            {/* Submission form */}
             <form onSubmit={handleSubmitTask} className='space-y-3'>
               {submissionLinks.map((linkObj, index) => (
                 <div key={index} className='flex items-center space-x-2'>
@@ -306,14 +317,12 @@ function TaskDetailPage() {
                   )}
                 </div>
               ))}
-
               {errorMessage && (
                 <p className='text-red-600 text-sm'>{errorMessage}</p>
               )}
               {submitMessage && (
                 <p className='text-green-600 text-sm'>{submitMessage}</p>
               )}
-
               <button
                 type='submit'
                 className='mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'

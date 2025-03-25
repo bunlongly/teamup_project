@@ -154,7 +154,8 @@ function MyProjects() {
               {filteredEnrolledProjects.map(project => (
                 <div
                   key={project.id}
-                  className='bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-4 sm:p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl'
+                  onClick={() => navigate(`/my-projects/${project.id}`)}
+                  className='bg-gradient-to-br cursor-pointer from-white to-gray-50 rounded-lg shadow-lg p-4 sm:p-6 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl'
                 >
                   <img
                     src={project.fileUrl || fallbackLogo}
