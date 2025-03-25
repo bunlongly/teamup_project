@@ -142,6 +142,24 @@ function MyProjectTabs({
     alert('Task created successfully!');
   };
 
+  // For the TEAM tab, include the owner if not already in teamMembers
+  const teamMembersWithOwner =
+    project && project.user
+      ? [
+          project.user,
+          ...teamMembers.filter(member => member.id !== project.user.id)
+        ]
+      : teamMembers;
+
+  // For the team member filter dropdown, include the owner too
+  const assignableMembersForFilter =
+    project && project.user
+      ? [
+          project.user,
+          ...teamMembers.filter(member => member.id !== project.user.id)
+        ]
+      : teamMembers;
+
   return (
     <>
       {/* Tabs */}
@@ -322,8 +340,8 @@ function MyProjectTabs({
                 >
                   <option value=''>All Team Members</option>
                   <option value='notAssigned'>Not Assigned</option>
-                  {teamMembers &&
-                    teamMembers.map(member => (
+                  {assignableMembersForFilter &&
+                    assignableMembersForFilter.map(member => (
                       <option key={member.id} value={member.id}>
                         {member.firstName
                           ? `${member.firstName} ${member.lastName}`
@@ -392,10 +410,14 @@ function MyProjectTabs({
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                {teamMembers && teamMembers.length > 0 ? (
-                  teamMembers
-                    .filter(member => member && member.id)
-                    .map(member => (
+                {project && project.user && (
+                  <>
+                    {[
+                      project.user,
+                      ...teamMembers.filter(
+                        member => member.id !== project.user.id
+                      )
+                    ].map(member => (
                       <div
                         key={member.id}
                         className='flex flex-col items-center p-2 bg-gray-50 rounded'
@@ -413,10 +435,14 @@ function MyProjectTabs({
                         <p className='text-xs text-gray-500'>
                           {member.jobTitle || member.role || 'No job title'}
                         </p>
+                        {member.id === project.user.id && (
+                          <p className='text-xs text-blue-600 font-semibold'>
+                            Owner
+                          </p>
+                        )}
                       </div>
-                    ))
-                ) : (
-                  <p className='text-gray-600'>No team members found.</p>
+                    ))}
+                  </>
                 )}
               </div>
             </div>

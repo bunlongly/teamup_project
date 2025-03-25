@@ -1,4 +1,3 @@
-// CreateTaskModal.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import axios from 'axios';
@@ -57,7 +56,7 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
     if (project && project.endDate) {
       const projectEnd = new Date(project.endDate);
       const userEnd = new Date(value);
-      if (userEnd > new Date(project.endDate)) {
+      if (userEnd > projectEnd) {
         setError(
           `Task end date cannot be after project end date (${formatDateDisplay(
             project.endDate
@@ -87,6 +86,16 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
       setDaysBetween('');
     }
   }, [startDate, endDate, error]);
+
+  // Compute assignable members.
+  // If the owner (project.user) isn't already in teamMembers, add them at the beginning.
+  let assignableMembers = teamMembers ? [...teamMembers] : [];
+  if (project && project.user) {
+    const ownerId = project.user.id;
+    if (!assignableMembers.some(member => member.id === ownerId)) {
+      assignableMembers.unshift(project.user);
+    }
+  }
 
   // Form submit handler
   const handleSubmit = async e => {
@@ -154,7 +163,6 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
         }
       );
       onTaskCreated(response.data.data);
-      // alert('Task created successfully!');
       onClose();
     } catch (err) {
       console.error('Error creating task:', err);
@@ -245,15 +253,14 @@ const CreateTaskModal = ({ onClose, onTaskCreated, teamMembers, project }) => {
               className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
             >
               <option value=''>-- None --</option>
-              {teamMembers &&
-                teamMembers.map(member => (
-                  <option key={member.id} value={member.id}>
-                    {member.firstName} {member.lastName}{' '}
-                    {member.jobTitle
-                      ? `(${member.jobTitle})`
-                      : `(${member.role})`}
-                  </option>
-                ))}
+              {assignableMembers.map(member => (
+                <option key={member.id} value={member.id}>
+                  {member.firstName} {member.lastName}{' '}
+                  {member.jobTitle
+                    ? `(${member.jobTitle})`
+                    : `(${member.role})`}
+                </option>
+              ))}
             </select>
           </div>
           {/* Status */}
