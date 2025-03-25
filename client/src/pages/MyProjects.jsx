@@ -117,27 +117,27 @@ function MyProjects() {
             filteredMyProjects.length === 0 ? (
               <p className='p-4'>No projects match your filter.</p>
             ) : (
-              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
                 {filteredMyProjects.map(project => (
                   <div
                     key={project.id}
-                    className='bg-gradient-to-br from-white to-gray-50 rounded-lg shadow-lg p-4 sm:p-6 cursor-pointer transform transition-all duration-300 hover:scale-105 hover:shadow-2xl'
                     onClick={() => navigate(`/my-projects/${project.id}`)}
+                    className='bg-white rounded-xl shadow-lg p-5 cursor-pointer transition-transform duration-300 hover:scale-105 hover:shadow-2xl border border-gray-100'
                   >
                     <img
                       src={project.fileUrl || fallbackLogo}
                       alt='Project'
-                      className='w-full h-32 sm:h-40 object-contain rounded mb-4'
+                      className='w-full h-48 object-contain rounded-md mb-4'
                     />
-                    <h3 className='text-lg sm:text-xl font-bold text-gray-800 mb-1'>
+                    <h3 className='text-xl font-bold text-gray-900 mb-2'>
                       {project.projectName || 'Untitled Project'}
                     </h3>
-                    <p className='text-sm text-gray-600 mb-2'>
+                    <p className='text-gray-600 text-sm mb-3'>
                       {project.projectDescription
                         ? project.projectDescription.substring(0, 100) + '...'
                         : 'No description provided.'}
                     </p>
-                    <p className='text-sm text-gray-600'>
+                    <p className='text-gray-700 font-medium'>
                       Approved Candidates:{' '}
                       {project.applications?.filter(
                         app => app.status === 'APPROVED'
