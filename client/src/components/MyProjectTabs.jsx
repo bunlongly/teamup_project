@@ -150,56 +150,74 @@ function MyProjectTabs({
                 <p className='text-gray-600'>No tasks match the filter.</p>
               ) : (
                 <div className='space-y-2'>
-                  {tasksToDisplay.map(task => (
-                    <div
-                      key={task.id}
-                      className='p-3 bg-gray-50 rounded flex flex-col sm:flex-row sm:items-center sm:justify-between cursor-pointer'
-                      onClick={() => navigate(`/task/${task.id}`)}
-                    >
-                      <div className='mb-2 sm:mb-0'>
-                        <p className='font-medium text-gray-700'>{task.name}</p>
-                        <p className='text-xs text-gray-500'>
-                          Start: {formatDate(task.startDate)}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          End: {formatDate(task.endDate)}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          Assigned to:{' '}
-                          {task.assignedTo
-                            ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
-                            : 'N/A'}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          Status: {task.status}
-                        </p>
+                  {tasksToDisplay.map(task => {
+                    // Define a mapping for status to badge classes
+                    const statusColors = {
+                      BACKLOG: 'bg-yellow-100 text-yellow-800',
+                      REVIEW: 'bg-purple-100 text-purple-800',
+                      IN_PROGRESS: 'bg-blue-100 text-blue-800',
+                      FINISHED: 'bg-green-100 text-green-800'
+                    };
+
+                    return (
+                      <div
+                        key={task.id}
+                        className='p-4 bg-white rounded-lg shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between cursor-pointer transition-transform transform hover:scale-105'
+                        onClick={() => navigate(`/task/${task.id}`)}
+                      >
+                        <div className='mb-2 sm:mb-0'>
+                          <p className='font-semibold text-gray-800 text-lg'>
+                            {task.name}
+                          </p>
+                          <div className='text-xs text-gray-500'>
+                            <span>Start: {formatDate(task.startDate)}</span> |{' '}
+                            <span>End: {formatDate(task.endDate)}</span>
+                          </div>
+                          <p className='text-sm text-gray-600 mt-1'>
+                            Assigned to:{' '}
+                            {task.assignedTo
+                              ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+                              : 'N/A'}
+                          </p>
+                          <div className='mt-1'>
+                            <span
+                              className={`px-2 py-1 text-xs font-semibold rounded ${
+                                statusColors[task.status] ||
+                                'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {task.status}
+                            </span>
+                          </div>
+                        </div>
+                        <div className='flex space-x-2'>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setTaskToEdit(task);
+                              setShowEditModal(true);
+                            }}
+                            className='px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors'
+                            title='Edit Task'
+                          >
+                            <FaEdit />
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setTaskToDelete(task);
+                              setShowDeleteModal(true);
+                            }}
+                            className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors'
+                            title='Delete Task'
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
                       </div>
-                      <div className='flex space-x-2'>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setTaskToEdit(task);
-                            setShowEditModal(true);
-                          }}
-                          className='px-2 py-1 bg-yellow-500 text-white text-xs rounded flex items-center justify-center'
-                          title='Edit Task'
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setTaskToDelete(task);
-                            setShowDeleteModal(true);
-                          }}
-                          className='px-2 py-1 bg-red-600 text-white text-xs rounded flex items-center justify-center'
-                          title='Delete Task'
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
+
                   {filteredTasks.length > displayCount && (
                     <button
                       onClick={() => setDisplayCount(prev => prev + 5)}
