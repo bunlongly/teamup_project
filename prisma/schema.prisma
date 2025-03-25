@@ -53,6 +53,7 @@ model User {
 
   applications          Application[] @relation("UserApplications")
   tasks                 Task[]
+  submissions   Submission[]
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -208,6 +209,8 @@ model Task {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  submissions  Submission[]
+
   // Relations
   assignedTo   User?      @relation(fields: [assignedToId], references: [id])
   post         Post       @relation(fields: [postId], references: [id])
@@ -219,4 +222,29 @@ enum TaskStatus {
   REVIEW
   IN_PROGRESS
   FINISHED
+}
+
+
+model Submission {
+  id           String           @id @default(uuid())
+  userId       String           // the user who submits the work
+  taskId       String           // the related task
+  comment      String?          // the submission message or comment
+  links        Json?            // JSON array of submitted links (e.g., ["https://github.com/...", "https://figma.com/..."])
+  attachment   String?          // URL for an uploaded file/image
+  reportReason String?          // optional field if a report is filed on the submission
+  status       SubmissionStatus @default(SUBMITTED)
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
 }

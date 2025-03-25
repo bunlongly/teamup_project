@@ -150,7 +150,7 @@ function MyProjects() {
           ) : filteredEnrolledProjects.length === 0 ? (
             <p className='p-4'>No enrolled projects match your filter.</p>
           ) : (
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6'>
               {filteredEnrolledProjects.map(project => (
                 <div
                   key={project.id}
