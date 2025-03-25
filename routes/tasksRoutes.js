@@ -7,6 +7,10 @@ import {
   deleteTask,
   getTaskById
 } from '../controllers/tasksController.js';
+import {
+  createSubmission,
+  getSubmissionForTask
+} from '../controllers/submissionController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
 
@@ -32,7 +36,14 @@ router.delete('/:id', authenticateUser, deleteTask);
 // Get tasks for a specific project/post
 router.get('/post/:postId', authenticateUser, getTasksForPost);
 
-
 router.get('/:id', authenticateUser, getTaskById);
 
+router.post(
+  '/:id/submit',
+  authenticateUser,
+  upload.single('attachment'),
+  createSubmission
+);
+
+router.get('/:id/submission', authenticateUser, getSubmissionForTask);
 export default router;
