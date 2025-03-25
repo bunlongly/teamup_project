@@ -119,7 +119,9 @@ export const getPostById = async (req, res) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
-        user: true // Include user data (you can restrict fields if needed)
+        user: true,
+        tasks: true,
+        applications: { include: { applicant: true } }
       }
     });
     if (!post) {
@@ -134,5 +136,19 @@ export const getPostById = async (req, res) => {
       'Error fetching post',
       error.message
     );
+  }
+};
+
+export const getMyProjects = async (req, res) => {
+  const currentUserId = req.user.id || req.user.userId;
+  try {
+    const projects = await prisma.post.findMany({
+      where: { userId: currentUserId },
+      include: { applications: { include: { applicant: true } } }
+    });
+    return res.status(200).json({ data: projects });
+  } catch (error) {
+    console.error('Error fetching my projects:', error);
+    return res.status(500).json({ error: 'Error fetching my projects' });
   }
 };

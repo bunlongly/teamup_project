@@ -1,27 +1,25 @@
-/* cspell:ignore notif */
-
-import { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import fallbackAvatar from '../assets/logo.png';
-// Optional helper to display "time ago" format
+import PropTypes from 'prop-types';
+
+// Helper function to format a date as "time ago"
 function formatTimeAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
   const diff = Math.floor((now - date) / 1000);
 
-  if (diff < 60) {
-    return `${diff} seconds ago`;
-  } else if (diff < 3600) {
+  if (diff < 60) return `${diff} seconds ago`;
+  if (diff < 3600) {
     const minutes = Math.floor(diff / 60);
     return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  } else if (diff < 86400) {
+  }
+  if (diff < 86400) {
     const hours = Math.floor(diff / 3600);
     return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  } else {
-    const days = Math.floor(diff / 86400);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
   }
+  const days = Math.floor(diff / 86400);
+  return `${days} day${days > 1 ? 's' : ''} ago`;
 }
 
 function NotificationPage() {
@@ -30,18 +28,14 @@ function NotificationPage() {
   const [visibleCount, setVisibleCount] = useState(10); // how many to show initially
   const token = localStorage.getItem('token');
 
-  // Fetch notifications on mount
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        // Adjust the port/URL if your backend runs on a different port
         const response = await axios.get(
           'http://localhost:5200/api/notifications',
-          {
-            headers: { Authorization: `Bearer ${token}` }
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        // Expect { data: { notifications: [...] } }
+        // Assuming your backend returns { data: { notifications: [...] } }
         setNotifications(response.data.data.notifications || []);
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -49,18 +43,12 @@ function NotificationPage() {
         setLoading(false);
       }
     };
-
     fetchNotifications();
   }, [token]);
 
-  // Dismiss a notification (example: remove from state or call your backend)
-  const handleDismiss = async notifId => {
-    try {
-      // For now, just remove from state; you can also call a backend endpoint here.
-      setNotifications(prev => prev.filter(n => n.id !== notifId));
-    } catch (error) {
-      console.error('Error dismissing notification:', error);
-    }
+  // Handler to dismiss a notification from UI (and optionally call backend)
+  const handleDismiss = notifId => {
+    setNotifications(prev => prev.filter(n => n.id !== notifId));
   };
 
   // Load next 10 notifications
@@ -72,7 +60,7 @@ function NotificationPage() {
     return <p className='p-4'>Loading notifications...</p>;
   }
 
-  if (notifications.length === 0) {
+  if (!notifications.length) {
     return <p className='p-4'>No notifications available.</p>;
   }
 
@@ -88,7 +76,6 @@ function NotificationPage() {
           />
         ))}
       </ul>
-
       {notifications.length > visibleCount && (
         <div className='mt-4 text-center'>
           <button
@@ -103,9 +90,8 @@ function NotificationPage() {
   );
 }
 
-export default NotificationPage;
+NotificationPage.propTypes = {};
 
-// A separate component for each notification item
 function NotificationCard({ notif, onDismiss }) {
   const { sender, message, createdAt, type } = notif;
   const senderImage = sender?.imageUrl || fallbackAvatar;
@@ -113,27 +99,24 @@ function NotificationCard({ notif, onDismiss }) {
     ? `${sender.firstName} ${sender.lastName}`
     : 'Unknown User';
 
-  // Determine the label for the notification type (for display purposes)
+  // Determine a friendly label for the notification type.
   let label = type;
-  if (type === 'connection_request') label = 'Connection Request';
-  if (type === 'connection_accepted') label = 'Request Accepted';
-  if (type === 'connection_confirmed') label = 'Connection Confirmed';
+  if (type === 'application_request') label = 'Application Request';
+  if (type === 'application_approved') label = 'Application Approved';
+  if (type === 'application_rejected') label = 'Application Rejected';
+  // You can add other types as needed.
 
-  // Check if the notification is older than 24 hours
+  // If notification is older than 24 hours, apply a different background color.
   const isOld = new Date() - new Date(createdAt) > 24 * 60 * 60 * 1000;
-  //   const isOld = new Date() - new Date(createdAt) > 60 * 1000;
-  // Conditional class: if old, apply a different background (e.g., yellow tint)
   const cardBgClass = isOld ? 'bg-yellow-100' : 'bg-white';
 
   return (
     <li className={`${cardBgClass} rounded shadow p-4 flex items-center`}>
-      {/* Left icon / user avatar */}
       <img
         src={senderImage}
         alt='Sender Avatar'
         className='w-10 h-10 rounded-full mr-4 object-cover'
       />
-      {/* Main notification text */}
       <div className='flex-1'>
         <p className='font-semibold text-gray-800'>{label}</p>
         <p className='text-sm text-gray-600'>{message}</p>
@@ -141,14 +124,12 @@ function NotificationCard({ notif, onDismiss }) {
           From: {senderName} • {formatTimeAgo(createdAt)}
         </p>
       </div>
-      {/* Action: Dismiss button as an icon */}
       <div className='flex flex-col items-end'>
         <button
           onClick={onDismiss}
           className='p-2 bg-gray-200 rounded-full hover:bg-gray-300 transition-colors'
           title='Dismiss notification'
         >
-          {/* X Icon (you can replace this SVG with any icon library component) */}
           <svg
             xmlns='http://www.w3.org/2000/svg'
             className='h-5 w-5 text-gray-600'
@@ -183,3 +164,5 @@ NotificationCard.propTypes = {
   }).isRequired,
   onDismiss: PropTypes.func.isRequired
 };
+
+export default NotificationPage;

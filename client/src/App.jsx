@@ -16,6 +16,9 @@ import CandidatePage from './pages/CandidatesPage';
 import NetworkPage from './pages/NetworkPage';
 import NotificationPage from './pages/NotificationPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import MyProjects from './pages/MyProjects';
+import MyProjectDetailPage from './pages/MyProjectDetailPage';
+import TaskDetailPage from './pages/TaskDetailPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -99,6 +102,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <CandidatePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/my-projects'
+            element={
+              <ProtectedRoute>
+                <MyProjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/my-projects/:id'
+            element={
+              <ProtectedRoute>
+                <MyProjectDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/task/:id'
+            element={
+              <ProtectedRoute>
+                <TaskDetailPage />
               </ProtectedRoute>
             }
           />

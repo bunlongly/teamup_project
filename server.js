@@ -9,6 +9,8 @@ import postRoutes from './routes/postRoutes.js';
 import connectionRoutes from './routes/connectionRoutes.js';
 import errorHandlerMiddleware from './middleware/errorHandlerMiddleware.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import applicationRoutes from './routes/applicationRoutes.js';
+import taskRoutes from './routes/tasksRoutes.js';
 
 dotenv.config();
 
@@ -40,6 +42,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/connection', connectionRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/application', applicationRoutes);
+app.use('/api/tasks', taskRoutes);
 
 // Error handling middleware
 app.use(errorHandlerMiddleware);
