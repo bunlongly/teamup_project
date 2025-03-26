@@ -125,6 +125,12 @@ export const updateTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
   const { id } = req.params;
   try {
+    // First delete all submissions related to the task to avoid foreign key constraint issues.
+    await prisma.submission.deleteMany({
+      where: { taskId: id }
+    });
+
+    // Then delete the task itself. (Note: only the "id" field is used in the where clause.)
     const deletedTask = await prisma.task.delete({
       where: { id }
     });
