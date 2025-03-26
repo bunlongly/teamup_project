@@ -146,7 +146,8 @@ export const getTasksForPost = async (req, res) => {
     const tasks = await prisma.task.findMany({
       where: { postId },
       include: {
-        assignedTo: true
+        assignedTo: true,
+        submissions: true
       },
       orderBy: {
         createdAt: 'asc'
@@ -209,7 +210,6 @@ export const getTaskById = async (req, res) => {
     );
   }
 };
-
 
 // Get all submissions for a task (for project owner)
 export const getAllSubmissionsForTask = async (req, res) => {

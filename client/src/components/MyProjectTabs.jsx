@@ -9,6 +9,9 @@ import DeleteTaskModal from './DeleteTaskModal';
 import EditTaskModal from './EditTaskModal';
 import { FaEdit, FaTrash } from 'react-icons/fa';
 
+/**
+ * Utility to format a date string (YYYY-MM-DD) into a more readable format.
+ */
 const formatDate = dateString => {
   if (!dateString) return 'N/A';
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
@@ -26,29 +29,31 @@ function MyProjectTabs({
 }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+
+  // List of tasks and loading state
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // Modal state variables for editing/deleting tasks
+  // Modals for create/edit/delete
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // Filter state for tasks
+  // Filters
   const [taskFilter, setTaskFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
   const [displayCount, setDisplayCount] = useState(15);
 
-  // Determine if the current user is the owner of the project
+  // Determine if current user is the project owner
   const currentUserId = currentUser?.id || currentUser?.userId || '';
   const ownerId = project?.user?.id || '';
   const isOwner =
     currentUserId && ownerId && String(currentUserId) === String(ownerId);
 
-  // Debug logging for owner check
+  // Debug logs
   console.log('currentUser:', currentUser);
   console.log('project.user:', project?.user);
   console.log(
@@ -60,7 +65,7 @@ function MyProjectTabs({
     isOwner
   );
 
-  // Fetch tasks for the current project
+  // Fetch tasks (ensuring the backend returns "submissions" for each task)
   useEffect(() => {
     const fetchTasks = async () => {
       try {
@@ -81,14 +86,15 @@ function MyProjectTabs({
     }
   }, [project, token]);
 
-  // Filter tasks based on active tab and search filters.
-  // For the "Task" tab, show tasks that are not submitted (status !== 'REVIEW')
-  // For the "Submitted" tab, show tasks with status === 'REVIEW'
-  const filteredTasks = tasks.filter(task => {
+  // Basic filtering for name, status, assigned team member
+  const baseFilteredTasks = tasks.filter(task => {
+    // name filter
     const matchesName = task.name
       .toLowerCase()
       .includes(taskFilter.toLowerCase());
+    // status filter
     const matchesStatus = statusFilter ? task.status === statusFilter : true;
+    // assigned filter
     let matchesMember = true;
     if (teamMemberFilter) {
       if (teamMemberFilter === 'notAssigned') {
@@ -98,31 +104,30 @@ function MyProjectTabs({
           task.assignedTo && task.assignedTo.id === teamMemberFilter;
       }
     }
-    // Further filter based on activeTab selection:
-    if (activeTab === 'Task') {
-      return (
-        matchesName &&
-        matchesStatus &&
-        matchesMember &&
-        task.status !== 'REVIEW'
-      );
-    }
-    if (activeTab === 'Submitted') {
-      return (
-        matchesName &&
-        matchesStatus &&
-        matchesMember &&
-        task.status === 'REVIEW'
-      );
-    }
-    // For "Team" tab, filtering is not applied here.
     return matchesName && matchesStatus && matchesMember;
   });
 
-  // Limit displayed tasks based on displayCount
+  // For the "Task" tab => tasks with no submissions
+  // For the "Submitted" tab => tasks with >=1 submission
+  // For the "Team" tab => we do not display tasks in that tab, so no filter needed there
+  let filteredTasks = [];
+  if (activeTab === 'Task') {
+    filteredTasks = baseFilteredTasks.filter(
+      t => !t.submissions || t.submissions.length === 0
+    );
+  } else if (activeTab === 'Submitted') {
+    filteredTasks = baseFilteredTasks.filter(
+      t => t.submissions && t.submissions.length > 0
+    );
+  } else {
+    // "Team" tab doesn't show tasks, so we won't filter tasks at all
+    filteredTasks = [];
+  }
+
+  // Slice tasks for "View More"
   const tasksToDisplay = filteredTasks.slice(0, displayCount);
 
-  // Compute task summary counts
+  // Summaries
   const totalCount = tasks.length;
   const backlogCount = tasks.filter(task => task.status === 'BACKLOG').length;
   const reviewCount = tasks.filter(task => task.status === 'REVIEW').length;
@@ -131,13 +136,13 @@ function MyProjectTabs({
   ).length;
   const finishedCount = tasks.filter(task => task.status === 'FINISHED').length;
 
-  // Handler for deleting a task
+  // Delete task
   const handleDeleteTask = async taskId => {
     try {
       await axios.delete(`http://localhost:5200/api/tasks/${taskId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setTasks(prev => prev.filter(task => task.id !== taskId));
+      setTasks(prev => prev.filter(t => t.id !== taskId));
       setShowDeleteModal(false);
       alert('Task deleted successfully!');
     } catch (error) {
@@ -146,38 +151,32 @@ function MyProjectTabs({
     }
   };
 
-  // Handler for updating a task
+  // Update task
   const handleUpdateTask = updatedTask => {
     setTasks(prev =>
-      prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
+      prev.map(t => (t.id === updatedTask.id ? updatedTask : t))
     );
     setShowEditModal(false);
     alert('Task updated successfully!');
   };
 
-  // Callback when a new task is created
+  // New task created
   const handleTaskCreated = newTask => {
     setTasks(prev => [...prev, newTask]);
     if (onTaskCreated) onTaskCreated(newTask);
     alert('Task created successfully!');
   };
 
-  // For the TEAM tab, include the owner if not already in teamMembers
+  // For "Team" tab, combine project.owner + teamMembers
   const teamMembersWithOwner =
     project && project.user
-      ? [
-          project.user,
-          ...teamMembers.filter(member => member.id !== project.user.id)
-        ]
+      ? [project.user, ...teamMembers.filter(m => m.id !== project.user.id)]
       : teamMembers;
 
-  // For the team member filter dropdown, include the owner too
+  // For dropdown filter of team members, also include the owner
   const assignableMembersForFilter =
     project && project.user
-      ? [
-          project.user,
-          ...teamMembers.filter(member => member.id !== project.user.id)
-        ]
+      ? [project.user, ...teamMembers.filter(m => m.id !== project.user.id)]
       : teamMembers;
 
   return (
@@ -201,8 +200,8 @@ function MyProjectTabs({
         </ul>
       </div>
 
-      {activeTab === 'Team' ? (
-        // TEAM TAB (same as before)
+      {/* TEAM TAB */}
+      {activeTab === 'Team' && (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           {/* Left Column: Team Members */}
           <div className='lg:col-span-8 space-y-4'>
@@ -211,12 +210,7 @@ function MyProjectTabs({
               <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
                 {project && project.user && (
                   <>
-                    {[
-                      project.user,
-                      ...teamMembers.filter(
-                        member => member.id !== project.user.id
-                      )
-                    ].map(member => (
+                    {teamMembersWithOwner.map(member => (
                       <div
                         key={member.id}
                         className='flex flex-col items-center p-2 bg-gray-50 rounded'
@@ -254,6 +248,8 @@ function MyProjectTabs({
               </button>
             </div>
           </div>
+
+          {/* Right Column: Project & Team Info */}
           <div className='lg:col-span-4 space-y-4'>
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
@@ -302,9 +298,12 @@ function MyProjectTabs({
             </div>
           </div>
         </div>
-      ) : (
-        // For Task and Submitted tabs, list tasks in a similar layout.
+      )}
+
+      {/* TASK or SUBMITTED Tabs */}
+      {(activeTab === 'Task' || activeTab === 'Submitted') && (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
+          {/* Left: Task list */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
               <h2 className='text-xl font-semibold mb-3'>
@@ -321,6 +320,7 @@ function MyProjectTabs({
               ) : (
                 <div className='space-y-2'>
                   {tasksToDisplay.map(task => {
+                    // color classes for statuses
                     const statusColors = {
                       BACKLOG: 'bg-yellow-100 text-yellow-800',
                       REVIEW: 'bg-purple-100 text-purple-800',
@@ -358,6 +358,7 @@ function MyProjectTabs({
                             </span>
                           </div>
                         </div>
+                        {/* If we're in the 'Task' tab, the owner can edit/delete */}
                         {isOwner && activeTab === 'Task' && (
                           <div className='flex space-x-2'>
                             <button
@@ -399,8 +400,10 @@ function MyProjectTabs({
               )}
             </div>
           </div>
-          {/* Right Column: Filter Panel, Summary, and Project Overview */}
+
+          {/* Right: Filter, Summaries, Project Overview */}
           <div className='lg:col-span-4 space-y-4'>
+            {/* Filter & Summary */}
             <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4 mb-6'>
               <div className='flex items-center justify-between mb-3'>
                 <h2 className='text-lg font-semibold'>Task Summary</h2>
@@ -461,19 +464,18 @@ function MyProjectTabs({
                 >
                   <option value=''>All Team Members</option>
                   <option value='notAssigned'>Not Assigned</option>
-                  {assignableMembersForFilter &&
-                    assignableMembersForFilter.map(member => (
-                      <option key={member.id} value={member.id}>
-                        {member.firstName
-                          ? `${member.firstName} ${member.lastName}`
-                          : member.name || 'No Name'}
-                      </option>
-                    ))}
+                  {assignableMembersForFilter.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {member.firstName
+                        ? `${member.firstName} ${member.lastName}`
+                        : member.name || 'No Name'}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            {/* Project Overview Panel */}
+            {/* Project Overview */}
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
               <div className='flex items-center mb-2'>
@@ -514,7 +516,7 @@ function MyProjectTabs({
               </div>
             </div>
 
-            {/* Team Status Panel */}
+            {/* Team Status */}
             <div className='bg-white rounded-md shadow p-4'>
               <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
               <p className='text-sm text-gray-600'>
