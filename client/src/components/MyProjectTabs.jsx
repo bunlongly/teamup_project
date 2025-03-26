@@ -1,3 +1,4 @@
+// MyProjectTabs.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +22,7 @@ function MyProjectTabs({
   project,
   ownerName,
   onTaskCreated,
-  currentUser // NEW prop added
+  currentUser
 }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -41,7 +42,7 @@ function MyProjectTabs({
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
   const [displayCount, setDisplayCount] = useState(15);
 
-  // Safely determine if the current user is the owner of the project
+  // Determine if the current user is the owner of the project
   const currentUserId = currentUser?.id || currentUser?.userId || '';
   const ownerId = project?.user?.id || '';
   const isOwner =
@@ -80,13 +81,14 @@ function MyProjectTabs({
     }
   }, [project, token]);
 
-  // Filter tasks based on name, status, and assigned team member
+  // Filter tasks based on active tab and search filters.
+  // For the "Task" tab, show tasks that are not submitted (status !== 'REVIEW')
+  // For the "Submitted" tab, show tasks with status === 'REVIEW'
   const filteredTasks = tasks.filter(task => {
     const matchesName = task.name
       .toLowerCase()
       .includes(taskFilter.toLowerCase());
     const matchesStatus = statusFilter ? task.status === statusFilter : true;
-
     let matchesMember = true;
     if (teamMemberFilter) {
       if (teamMemberFilter === 'notAssigned') {
@@ -96,6 +98,24 @@ function MyProjectTabs({
           task.assignedTo && task.assignedTo.id === teamMemberFilter;
       }
     }
+    // Further filter based on activeTab selection:
+    if (activeTab === 'Task') {
+      return (
+        matchesName &&
+        matchesStatus &&
+        matchesMember &&
+        task.status !== 'REVIEW'
+      );
+    }
+    if (activeTab === 'Submitted') {
+      return (
+        matchesName &&
+        matchesStatus &&
+        matchesMember &&
+        task.status === 'REVIEW'
+      );
+    }
+    // For "Team" tab, filtering is not applied here.
     return matchesName && matchesStatus && matchesMember;
   });
 
@@ -165,7 +185,7 @@ function MyProjectTabs({
       {/* Tabs */}
       <div className='mb-4 border-b'>
         <ul className='flex space-x-6'>
-          {['Task', 'Team'].map(tab => (
+          {['Task', 'Submitted', 'Team'].map(tab => (
             <li
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -181,27 +201,132 @@ function MyProjectTabs({
         </ul>
       </div>
 
-      {activeTab === 'Task' ? (
+      {activeTab === 'Team' ? (
+        // TEAM TAB (same as before)
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Task List */}
+          {/* Left Column: Team Members */}
+          <div className='lg:col-span-8 space-y-4'>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+                {project && project.user && (
+                  <>
+                    {[
+                      project.user,
+                      ...teamMembers.filter(
+                        member => member.id !== project.user.id
+                      )
+                    ].map(member => (
+                      <div
+                        key={member.id}
+                        className='flex flex-col items-center p-2 bg-gray-50 rounded'
+                      >
+                        <img
+                          src={member.imageUrl || fallbackLogo}
+                          alt='Member'
+                          className='w-16 h-16 object-cover rounded-full mb-2'
+                        />
+                        <p className='font-medium'>
+                          {member.firstName
+                            ? `${member.firstName} ${member.lastName}`
+                            : member.name || 'No Name'}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          {member.jobTitle || member.role || 'No job title'}
+                        </p>
+                        {member.id === project.user.id && (
+                          <p className='text-xs text-blue-600 font-semibold'>
+                            Owner
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-xl font-semibold mb-3'>
+                Add New Team Member
+              </h2>
+              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
+                + Add Member
+              </button>
+            </div>
+          </div>
+          <div className='lg:col-span-4 space-y-4'>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
+              <div className='flex items-center mb-2'>
+                <img
+                  src={project.fileUrl || fallbackLogo}
+                  alt='Project'
+                  className='w-16 h-16 object-cover rounded mr-4'
+                />
+                <div>
+                  <h3 className='font-bold text-xl'>
+                    {project.projectName || 'Untitled Project'}
+                  </h3>
+                  <p className='text-sm text-gray-600'>
+                    {project.projectDescription
+                      ? project.projectDescription.substring(0, 100) + '...'
+                      : 'No description provided.'}
+                  </p>
+                </div>
+              </div>
+              <div className='mt-4'>
+                <h3 className='font-semibold'>Owner Information</h3>
+                <div className='flex items-center mt-2'>
+                  <img
+                    src={project.user?.imageUrl || fallbackLogo}
+                    alt='Owner'
+                    className='w-12 h-12 object-cover rounded-full mr-3'
+                  />
+                  <div>
+                    <p className='font-bold'>{ownerName}</p>
+                    <p className='text-xs text-gray-500'>
+                      {project.user?.jobTitle || 'No job title'}
+                    </p>
+                    <p className='text-xs text-gray-500'>
+                      @{project.user?.username || 'username'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
+              <p className='text-sm text-gray-600'>
+                Active Members: {teamMembers?.length || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // For Task and Submitted tabs, list tasks in a similar layout.
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
-              <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
+              <h2 className='text-xl font-semibold mb-3'>
+                {activeTab === 'Task' ? 'Current Tasks' : 'Submitted Tasks'}
+              </h2>
               {loadingTasks ? (
                 <p className='text-gray-600'>Loading tasks...</p>
               ) : filteredTasks.length === 0 ? (
-                <p className='text-gray-600'>No tasks match the filter.</p>
+                <p className='text-gray-600'>
+                  {activeTab === 'Task'
+                    ? 'No tasks match the filter.'
+                    : 'No submitted tasks found.'}
+                </p>
               ) : (
                 <div className='space-y-2'>
                   {tasksToDisplay.map(task => {
-                    // Mapping of status to color classes
                     const statusColors = {
                       BACKLOG: 'bg-yellow-100 text-yellow-800',
                       REVIEW: 'bg-purple-100 text-purple-800',
                       IN_PROGRESS: 'bg-blue-100 text-blue-800',
                       FINISHED: 'bg-green-100 text-green-800'
                     };
-
                     return (
                       <div
                         key={task.id}
@@ -233,8 +358,7 @@ function MyProjectTabs({
                             </span>
                           </div>
                         </div>
-                        {/* Only show edit & delete buttons if current user is the owner */}
-                        {isOwner && (
+                        {isOwner && activeTab === 'Task' && (
                           <div className='flex space-x-2'>
                             <button
                               onClick={e => {
@@ -275,15 +399,12 @@ function MyProjectTabs({
               )}
             </div>
           </div>
-
           {/* Right Column: Filter Panel, Summary, and Project Overview */}
           <div className='lg:col-span-4 space-y-4'>
-            {/* Filter & Summary Panel */}
             <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4 mb-6'>
               <div className='flex items-center justify-between mb-3'>
                 <h2 className='text-lg font-semibold'>Task Summary</h2>
-                {/* Only show the "+ New Task" button if current user is the owner */}
-                {isOwner && (
+                {isOwner && activeTab === 'Task' && (
                   <button
                     onClick={() => setShowCreateModal(true)}
                     className='px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-200 transition-colors'
@@ -402,107 +523,6 @@ function MyProjectTabs({
             </div>
           </div>
         </div>
-      ) : (
-        // TEAM TAB
-        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Team Members */}
-          <div className='lg:col-span-8 space-y-4'>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
-              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                {project && project.user && (
-                  <>
-                    {[
-                      project.user,
-                      ...teamMembers.filter(
-                        member => member.id !== project.user.id
-                      )
-                    ].map(member => (
-                      <div
-                        key={member.id}
-                        className='flex flex-col items-center p-2 bg-gray-50 rounded'
-                      >
-                        <img
-                          src={member.imageUrl || fallbackLogo}
-                          alt='Member'
-                          className='w-16 h-16 object-cover rounded-full mb-2'
-                        />
-                        <p className='font-medium'>
-                          {member.firstName
-                            ? `${member.firstName} ${member.lastName}`
-                            : member.name || 'No Name'}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          {member.jobTitle || member.role || 'No job title'}
-                        </p>
-                        {member.id === project.user.id && (
-                          <p className='text-xs text-blue-600 font-semibold'>
-                            Owner
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>
-                Add New Team Member
-              </h2>
-              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
-                + Add Member
-              </button>
-            </div>
-          </div>
-          <div className='lg:col-span-4 space-y-4'>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
-              <div className='flex items-center mb-2'>
-                <img
-                  src={project.fileUrl || fallbackLogo}
-                  alt='Project'
-                  className='w-16 h-16 object-cover rounded mr-4'
-                />
-                <div>
-                  <h3 className='font-bold text-xl'>
-                    {project.projectName || 'Untitled Project'}
-                  </h3>
-                  <p className='text-sm text-gray-600'>
-                    {project.projectDescription
-                      ? project.projectDescription.substring(0, 100) + '...'
-                      : 'No description provided.'}
-                  </p>
-                </div>
-              </div>
-              <div className='mt-4'>
-                <h3 className='font-semibold'>Owner Information</h3>
-                <div className='flex items-center mt-2'>
-                  <img
-                    src={project.user?.imageUrl || fallbackLogo}
-                    alt='Owner'
-                    className='w-12 h-12 object-cover rounded-full mr-3'
-                  />
-                  <div>
-                    <p className='font-bold'>{ownerName}</p>
-                    <p className='text-xs text-gray-500'>
-                      {project.user?.jobTitle || 'No job title'}
-                    </p>
-                    <p className='text-xs text-gray-500'>
-                      @{project.user?.username || 'username'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
-              <p className='text-sm text-gray-600'>
-                Active Members: {teamMembers?.length || 0}
-              </p>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Modals */}
@@ -543,7 +563,7 @@ MyProjectTabs.propTypes = {
   project: PropTypes.object.isRequired,
   ownerName: PropTypes.string.isRequired,
   onTaskCreated: PropTypes.func,
-  currentUser: PropTypes.object.isRequired // NEW prop validation
+  currentUser: PropTypes.object.isRequired
 };
 
 export default MyProjectTabs;
