@@ -9,7 +9,8 @@ import {
 } from '../controllers/tasksController.js';
 import {
   createSubmission,
-  getSubmissionForTask
+  getSubmissionForTask,
+  getAllSubmissionsForTask
 } from '../controllers/submissionController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
@@ -46,4 +47,7 @@ router.post(
 );
 
 router.get('/:id/submission', authenticateUser, getSubmissionForTask);
+
+// For owners: get all submissions for the task
+router.get('/:id/submissions', authenticateUser, getAllSubmissionsForTask);
 export default router;

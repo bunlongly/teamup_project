@@ -69,37 +69,76 @@ export const createSubmission = async (req, res) => {
   }
 };
 
-
 export const getSubmissionForTask = async (req, res) => {
-    const taskId = req.params.id;
-    const currentUserId = req.user?.id || req.user?.userId;
-  
-    if (!taskId) {
-      return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task ID is required');
+  const taskId = req.params.id;
+  const currentUserId = req.user?.id || req.user?.userId;
+
+  if (!taskId) {
+    return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task ID is required');
+  }
+
+  try {
+    // Find the submission for this task by the current user
+    const submission = await prisma.submission.findFirst({
+      where: {
+        taskId,
+        userId: currentUserId
+      },
+      include: { user: true, task: true }
+    });
+
+    if (!submission) {
+      return errorResponse(res, StatusCodes.NOT_FOUND, 'Submission not found');
     }
-  
-    try {
-      // Find the submission for this task by the current user
-      const submission = await prisma.submission.findFirst({
-        where: {
-          taskId,
-          userId: currentUserId,
-        },
-        include: { user: true, task: true }
-      });
-  
-      if (!submission) {
-        return errorResponse(res, StatusCodes.NOT_FOUND, 'Submission not found');
-      }
-  
-      return successResponse(res, 'Submission retrieved successfully', submission);
-    } catch (error) {
-      console.error('Error fetching submission:', error);
+
+    return successResponse(
+      res,
+      'Submission retrieved successfully',
+      submission
+    );
+  } catch (error) {
+    console.error('Error fetching submission:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching submission'
+    );
+  }
+};
+
+// Get all submissions for a task (for project owner)
+export const getAllSubmissionsForTask = async (req, res) => {
+  const taskId = req.params.id;
+
+  if (!taskId) {
+    return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task ID is required');
+  }
+
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: { taskId },
+      include: { user: true, task: true }
+    });
+
+    if (!submissions.length) {
       return errorResponse(
         res,
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        'Error fetching submission'
+        StatusCodes.NOT_FOUND,
+        'No submissions found for this task'
       );
     }
-  };
-  
+
+    return successResponse(
+      res,
+      'Submissions retrieved successfully',
+      submissions
+    );
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching submissions'
+    );
+  }
+};

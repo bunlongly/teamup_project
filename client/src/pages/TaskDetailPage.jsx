@@ -1,20 +1,33 @@
+// TaskDetailPage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import fallbackLogo from '../assets/logo.png';
 import PreviewSubmissionModal from '../components/PreviewSubmissionModal';
 
+const formatDate = dateString => {
+  if (!dateString) return 'N/A';
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+const isImageLink = link =>
+  link && /\.(png|jpe?g|gif|webp)$/i.test(link.trim());
+
+const isImageAttachment = fileUrl =>
+  fileUrl && /\.(png|jpe?g|gif|webp)$/i.test(fileUrl.trim());
+
 function TaskDetailPage() {
   const { id } = useParams(); // Task ID from URL
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
 
-  // Task data and loading state
+  // State for task details
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Submission form state
+  // Submission form state (for team members)
   const [submissionLinks, setSubmissionLinks] = useState([{ url: '' }]);
   const [submissionComment, setSubmissionComment] = useState('');
   const [submissionAttachment, setSubmissionAttachment] = useState(null);
@@ -22,54 +35,77 @@ function TaskDetailPage() {
   const [showReportField, setShowReportField] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
-  // Track submission result from the server
+  // Submission result state
+  // For team members: single submission object
+  // For owner: array of submissions
   const [submissionResult, setSubmissionResult] = useState(null);
-  // Track whether user has already submitted (local flag)
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
-  // Modal state for preview submission
+  // Preview modal state for submission confirmation
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [submissionPreviewData, setSubmissionPreviewData] = useState({});
 
-  // Private comments (demo only)
+  // Private comments state (demo only)
   const [privateComment, setPrivateComment] = useState('');
   const [privateComments, setPrivateComments] = useState([]);
 
-  // Fetch task details
+  // Tab state (for owner only): "details" or "submissions"
+  const [viewTab, setViewTab] = useState('details');
+
+  // Determine if the current user is the owner of the task’s post.
+  const [isOwner, setIsOwner] = useState(false);
   useEffect(() => {
-    const fetchTask = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5200/api/tasks/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setTask(response.data.data);
-      } catch (error) {
-        console.error('Error fetching task details:', error);
-        if (error.response && error.response.status === 404) {
-          setErrorMessage('You are not authorized to view this task.');
-        } else {
-          setErrorMessage('An error occurred while fetching task details.');
-        }
-      } finally {
-        setLoading(false);
+    if (task && task.post && task.post.user) {
+      const currentUserId = localStorage.getItem('userId');
+      setIsOwner(String(currentUserId) === String(task.post.user.id));
+    }
+  }, [task]);
+
+  // Fetch task details
+  const fetchTaskDetails = async () => {
+    try {
+      const res = await axios.get(`http://localhost:5200/api/tasks/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setTask(res.data.data);
+    } catch (error) {
+      console.error('Error fetching task details:', error);
+      if (error.response && error.response.status === 404) {
+        setErrorMessage('You are not authorized to view this task.');
+      } else {
+        setErrorMessage('An error occurred while fetching task details.');
       }
-    };
-    fetchTask();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTaskDetails();
   }, [id, token]);
 
-  // Fetch existing submission for the current task (if any)
+  // Fetch submission data
   useEffect(() => {
-    const fetchSubmission = async () => {
+    const fetchSubmissionData = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:5200/api/tasks/${id}/submission`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setSubmissionResult(res.data.data);
-        setHasSubmitted(true);
+        if (isOwner) {
+          // For owner: fetch all submissions for the task
+          const res = await axios.get(
+            `http://localhost:5200/api/tasks/${id}/submissions`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setSubmissionResult(res.data.data); // expected to be an array
+          setHasSubmitted(res.data.data && res.data.data.length > 0);
+        } else {
+          // For team member: fetch their own submission
+          const res = await axios.get(
+            `http://localhost:5200/api/tasks/${id}/submission`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setSubmissionResult(res.data.data); // expected to be a single object
+          setHasSubmitted(true);
+        }
       } catch (error) {
-        // If 404, then no submission exists (which is fine)
         if (error.response && error.response.status === 404) {
           setSubmissionResult(null);
           setHasSubmitted(false);
@@ -78,8 +114,10 @@ function TaskDetailPage() {
         }
       }
     };
-    fetchSubmission();
-  }, [id, token]);
+    if (task) {
+      fetchSubmissionData();
+    }
+  }, [task, id, token, isOwner]);
 
   // Handlers for submission links
   const handleAddLinkField = () => {
@@ -98,17 +136,15 @@ function TaskDetailPage() {
     });
   };
 
-  // Show preview before confirming submission
+  // Show preview modal for submission confirmation
   const handlePreviewSubmit = e => {
     e.preventDefault();
     setErrorMessage('');
     setSubmitMessage('');
-
     if (submissionLinks.every(link => !link.url.trim())) {
       setErrorMessage('Please provide at least one submission link.');
       return;
     }
-
     const now = new Date().toLocaleString();
     const previewData = {
       links: submissionLinks.map(link => link.url),
@@ -135,7 +171,6 @@ function TaskDetailPage() {
     if (submissionAttachment) {
       formData.append('attachment', submissionAttachment);
     }
-
     try {
       const res = await axios.post(
         `http://localhost:5200/api/tasks/${id}/submit`,
@@ -147,16 +182,20 @@ function TaskDetailPage() {
           }
         }
       );
-      setSubmissionResult(res.data.data);
+      // Do not update task status automatically here.
+      // Instead, re-fetch task details and submission data.
       setSubmitMessage('Task submitted successfully!');
       setHasSubmitted(true);
+      await fetchTaskDetails();
+      // Re-fetch submissions
+      // (The useEffect watching [task] will run after task is updated)
     } catch (error) {
       console.error('Error submitting task:', error);
       setErrorMessage('Failed to submit task.');
     }
   };
 
-  // Private comments (demo only)
+  // Handle posting a private comment
   const handlePostComment = e => {
     e.preventDefault();
     if (!privateComment.trim()) return;
@@ -165,12 +204,12 @@ function TaskDetailPage() {
       text: privateComment,
       date: new Date().toISOString()
     };
-    setPrivateComments([...privateComments, newComment]);
+    setPrivateComments(prev => [...prev, newComment]);
     setPrivateComment('');
   };
 
   if (loading) return <p className='p-4'>Loading task details...</p>;
-  if (errorMessage) {
+  if (errorMessage)
     return (
       <div className='p-4'>
         <p className='text-red-600'>{errorMessage}</p>
@@ -182,7 +221,6 @@ function TaskDetailPage() {
         </button>
       </div>
     );
-  }
   if (!task) return <p className='p-4'>Task not found.</p>;
 
   const assignedBy = task.post?.user
@@ -199,14 +237,6 @@ function TaskDetailPage() {
     editedInfo = ` (Edited ${dateStr})`;
   }
 
-  // Helper: check if a link is an image
-  const isImageLink = link =>
-    link && /\.(png|jpe?g|gif|webp)$/i.test(link.trim());
-
-  // Helper for submission attachment if it's a URL
-  const isImageAttachment = fileUrl =>
-    fileUrl && /\.(png|jpe?g|gif|webp)$/i.test(fileUrl.trim());
-
   return (
     <div className='container mx-auto p-4'>
       {/* Back Button */}
@@ -216,8 +246,37 @@ function TaskDetailPage() {
       >
         &larr; Back
       </button>
+
+      {/* For owners, show two tabs: "Details" and "Submissions". For team members, only "Details". */}
+      {isOwner && (
+        <div className='mb-4 border-b'>
+          <ul className='flex space-x-6'>
+            <li
+              onClick={() => setViewTab('details')}
+              className={`cursor-pointer pb-2 transition-all duration-300 ${
+                viewTab === 'details'
+                  ? 'border-b-2 border-blue-500 font-semibold text-gray-800'
+                  : 'text-gray-500 hover:border-b-2 hover:border-blue-300'
+              }`}
+            >
+              Details
+            </li>
+            <li
+              onClick={() => setViewTab('submissions')}
+              className={`cursor-pointer pb-2 transition-all duration-300 ${
+                viewTab === 'submissions'
+                  ? 'border-b-2 border-blue-500 font-semibold text-gray-800'
+                  : 'text-gray-500 hover:border-b-2 hover:border-blue-300'
+              }`}
+            >
+              Submissions
+            </li>
+          </ul>
+        </div>
+      )}
+
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-        {/* Left Column: Task Details & Private Comments */}
+        {/* Left Column: Task Details & Private Comments (always visible) */}
         <div className='lg:col-span-2 space-y-6'>
           <div className='bg-white rounded-md shadow p-6'>
             <h1 className='text-2xl font-bold mb-1'>
@@ -305,62 +364,7 @@ function TaskDetailPage() {
             </div>
           </div>
 
-          {/* Submission Result Panel (Full Width) */}
-          {submissionResult && (
-            <div className='bg-white rounded-md shadow p-6 w-full'>
-              <h2 className='text-xl font-bold mb-2'>Your Submission</h2>
-              <p className='text-sm text-gray-600 mb-2'>
-                Submitted at:{' '}
-                {new Date(submissionResult.createdAt).toLocaleString()}
-              </p>
-              {submissionResult.links &&
-                Array.isArray(submissionResult.links) && (
-                  <div className='mb-2'>
-                    <h3 className='font-semibold'>Links:</h3>
-                    <ul className='list-disc list-inside'>
-                      {submissionResult.links.map((link, idx) => (
-                        <li key={idx} className='text-blue-600 break-all'>
-                          {link}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              <div className='mb-2'>
-                <h3 className='font-semibold'>Comment:</h3>
-                <p>{submissionResult.comment || 'No comment provided.'}</p>
-              </div>
-              {submissionResult.attachment && (
-                <div className='mb-2'>
-                  <h3 className='font-semibold'>Attachment:</h3>
-                  {isImageAttachment(submissionResult.attachment) ? (
-                    <img
-                      src={submissionResult.attachment}
-                      alt='Submitted Attachment'
-                      className='w-full max-w-md border rounded mt-1'
-                    />
-                  ) : (
-                    <a
-                      href={submissionResult.attachment}
-                      target='_blank'
-                      rel='noreferrer'
-                      className='text-blue-500 underline break-all'
-                    >
-                      {submissionResult.attachment}
-                    </a>
-                  )}
-                </div>
-              )}
-              {submissionResult.reportReason && (
-                <div>
-                  <h3 className='font-semibold text-red-600'>Report Reason:</h3>
-                  <p>{submissionResult.reportReason}</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Private Comments Section (rendered below submission result) */}
+          {/* Private Comments Section (always visible) */}
           <div className='bg-white rounded-md shadow p-4'>
             <h2 className='text-lg font-semibold mb-2'>Private Comments</h2>
             <form onSubmit={handlePostComment} className='flex space-x-2 mb-4'>
@@ -394,19 +398,145 @@ function TaskDetailPage() {
           </div>
         </div>
 
-        {/* Right Column: Submission Panel */}
-        <div className='space-y-6'>
-          <div className='bg-white rounded-md shadow p-4'>
-            <h2 className='text-lg font-semibold mb-2'>Submit Your Work</h2>
-            <p className='text-sm text-green-600 mb-4'>Assigned</p>
-
-            {hasSubmitted ? (
-              <p className='text-green-700 font-semibold'>
-                You have already submitted for this task.
-              </p>
-            ) : (
+        {/* Right Column: For non-owners, show Submission Panel.
+             For owners, if "Submissions" tab is active, show submissions; otherwise show nothing. */}
+        <div className='lg:col-span-1 space-y-6'>
+          {isOwner ? (
+            viewTab === 'submissions' && (
+              <div className='bg-white rounded-md shadow p-4'>
+                <h2 className='text-lg font-semibold mb-2'>Team Submissions</h2>
+                {submissionResult && submissionResult.length > 0 ? (
+                  submissionResult.map(submission => (
+                    <div
+                      key={submission.id}
+                      className='mb-4 border p-4 rounded'
+                    >
+                      <p className='text-sm text-gray-600 mb-1'>
+                        Submitted at:{' '}
+                        {new Date(submission.createdAt).toLocaleString()}
+                      </p>
+                      {submission.links && Array.isArray(submission.links) && (
+                        <div className='mb-1'>
+                          <h3 className='font-semibold'>Links:</h3>
+                          <ul className='list-disc list-inside'>
+                            {submission.links.map((link, idx) => (
+                              <li key={idx} className='text-blue-600 break-all'>
+                                {link}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <div className='mb-1'>
+                        <h3 className='font-semibold'>Comment:</h3>
+                        <p>{submission.comment || 'No comment provided.'}</p>
+                      </div>
+                      {submission.attachment && (
+                        <div className='mb-1'>
+                          <h3 className='font-semibold'>Attachment:</h3>
+                          {isImageAttachment(submission.attachment) ? (
+                            <img
+                              src={submission.attachment}
+                              alt='Submitted Attachment'
+                              className='w-full max-w-md border rounded mt-1'
+                            />
+                          ) : (
+                            <a
+                              href={submission.attachment}
+                              target='_blank'
+                              rel='noreferrer'
+                              className='text-blue-500 underline break-all'
+                            >
+                              {submission.attachment}
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {submission.reportReason && (
+                        <div>
+                          <h3 className='font-semibold text-red-600'>
+                            Report Reason:
+                          </h3>
+                          <p>{submission.reportReason}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className='text-sm text-gray-600'>No submissions yet.</p>
+                )}
+              </div>
+            )
+          ) : (
+            // For team members, show their own submission panel
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Your Submission</h2>
+              {hasSubmitted ? (
+                <>
+                  <p className='text-sm text-gray-600 mb-2'>
+                    Submitted at:{' '}
+                    {new Date(submissionResult.createdAt).toLocaleString()}
+                  </p>
+                  {submissionResult.links &&
+                    Array.isArray(submissionResult.links) && (
+                      <div className='mb-2'>
+                        <h3 className='font-semibold'>Links:</h3>
+                        <ul className='list-disc list-inside'>
+                          {submissionResult.links.map((link, idx) => (
+                            <li key={idx} className='text-blue-600 break-all'>
+                              {link}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  <div className='mb-2'>
+                    <h3 className='font-semibold'>Comment:</h3>
+                    <p>{submissionResult.comment || 'No comment provided.'}</p>
+                  </div>
+                  {submissionResult.attachment && (
+                    <div className='mb-2'>
+                      <h3 className='font-semibold'>Attachment:</h3>
+                      {isImageAttachment(submissionResult.attachment) ? (
+                        <img
+                          src={submissionResult.attachment}
+                          alt='Submitted Attachment'
+                          className='w-full max-w-md border rounded mt-1'
+                        />
+                      ) : (
+                        <a
+                          href={submissionResult.attachment}
+                          target='_blank'
+                          rel='noreferrer'
+                          className='text-blue-500 underline break-all'
+                        >
+                          {submissionResult.attachment}
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {submissionResult.reportReason && (
+                    <div>
+                      <h3 className='font-semibold text-red-600'>
+                        Report Reason:
+                      </h3>
+                      <p>{submissionResult.reportReason}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className='text-green-700 font-semibold'>
+                  You have not submitted for this task.
+                </p>
+              )}
+            </div>
+          )}
+          {/* For non-owners, show the submission form */}
+          {!isOwner && !hasSubmitted && (
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Submit Your Work</h2>
+              <p className='text-sm text-green-600 mb-4'>Assigned</p>
               <form onSubmit={handlePreviewSubmit} className='space-y-4'>
-                {/* Submission Links */}
                 {submissionLinks.map((linkObj, index) => (
                   <div key={index} className='flex items-center space-x-2'>
                     <input
@@ -435,7 +565,6 @@ function TaskDetailPage() {
                     )}
                   </div>
                 ))}
-                {/* File Attachment */}
                 <div>
                   <label className='block text-sm font-medium text-gray-700'>
                     Upload Attachment (Optional)
@@ -446,7 +575,6 @@ function TaskDetailPage() {
                     className='mt-1 block w-full'
                   />
                 </div>
-                {/* Submission Comment */}
                 <div>
                   <label className='block text-sm font-medium text-gray-700'>
                     Submission Comment (Optional)
@@ -459,7 +587,6 @@ function TaskDetailPage() {
                     className='mt-1 block w-full rounded-md border-gray-300 shadow-sm'
                   ></textarea>
                 </div>
-                {/* Report Submission Toggle & Reason */}
                 <div>
                   <button
                     type='button'
@@ -496,12 +623,12 @@ function TaskDetailPage() {
                   Preview Submission
                 </button>
               </form>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Submission Modal */}
       {showPreviewModal && (
         <PreviewSubmissionModal
           submissionData={submissionPreviewData}

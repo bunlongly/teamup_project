@@ -209,3 +209,41 @@ export const getTaskById = async (req, res) => {
     );
   }
 };
+
+
+// Get all submissions for a task (for project owner)
+export const getAllSubmissionsForTask = async (req, res) => {
+  const taskId = req.params.id;
+
+  if (!taskId) {
+    return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task ID is required');
+  }
+
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: { taskId },
+      include: { user: true, task: true }
+    });
+
+    if (!submissions.length) {
+      return errorResponse(
+        res,
+        StatusCodes.NOT_FOUND,
+        'No submissions found for this task'
+      );
+    }
+
+    return successResponse(
+      res,
+      'Submissions retrieved successfully',
+      submissions
+    );
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching submissions'
+    );
+  }
+};
