@@ -65,7 +65,6 @@ function TaskDetailPage() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [submissionPreviewData, setSubmissionPreviewData] = useState({});
 
-
   // For owners: tab state ("details" or "submissions")
   const [viewTab, setViewTab] = useState('details');
 
@@ -212,7 +211,6 @@ function TaskDetailPage() {
       setErrorMessage('Failed to submit task.');
     }
   };
-
 
   if (loading) return <p className='p-4'>Loading task details...</p>;
   if (errorMessage)
@@ -369,8 +367,6 @@ function TaskDetailPage() {
               )}
             </div>
           </div>
-
-        
         </div>
 
         {/* Right Column: Submission Panel */}
