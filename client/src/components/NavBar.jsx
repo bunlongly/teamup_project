@@ -10,7 +10,8 @@ import {
   faBell,
   faRepeat,
   faUser,
-  faRightFromBracket
+  faRightFromBracket,
+  faComments
 } from '@fortawesome/free-solid-svg-icons';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
@@ -178,6 +179,17 @@ function NavBar() {
               >
                 <FontAwesomeIcon icon={faUser} />
                 <span>Profile</span>
+              </NavLink>
+              <NavLink
+                to='/chat'
+                className={({ isActive }) =>
+                  isActive
+                    ? 'text-[#21ADEA] flex flex-col items-center'
+                    : 'text-white flex flex-col items-center'
+                }
+              >
+                <FontAwesomeIcon icon={faComments} />
+                <span>Chat</span>
               </NavLink>
               <button
                 onClick={handleLogout}
