@@ -125,6 +125,12 @@ export const updateTask = async (req, res) => {
 export const deleteTask = async (req, res) => {
   const { id } = req.params;
   try {
+    // First delete all submissions related to the task to avoid foreign key constraint issues.
+    await prisma.submission.deleteMany({
+      where: { taskId: id }
+    });
+
+    // Then delete the task itself. (Note: only the "id" field is used in the where clause.)
     const deletedTask = await prisma.task.delete({
       where: { id }
     });
@@ -146,7 +152,8 @@ export const getTasksForPost = async (req, res) => {
     const tasks = await prisma.task.findMany({
       where: { postId },
       include: {
-        assignedTo: true
+        assignedTo: true,
+        submissions: true
       },
       orderBy: {
         createdAt: 'asc'
@@ -206,6 +213,43 @@ export const getTaskById = async (req, res) => {
       res,
       StatusCodes.INTERNAL_SERVER_ERROR,
       'Error fetching task'
+    );
+  }
+};
+
+// Get all submissions for a task (for project owner)
+export const getAllSubmissionsForTask = async (req, res) => {
+  const taskId = req.params.id;
+
+  if (!taskId) {
+    return errorResponse(res, StatusCodes.BAD_REQUEST, 'Task ID is required');
+  }
+
+  try {
+    const submissions = await prisma.submission.findMany({
+      where: { taskId },
+      include: { user: true, task: true }
+    });
+
+    if (!submissions.length) {
+      return errorResponse(
+        res,
+        StatusCodes.NOT_FOUND,
+        'No submissions found for this task'
+      );
+    }
+
+    return successResponse(
+      res,
+      'Submissions retrieved successfully',
+      submissions
+    );
+  } catch (error) {
+    console.error('Error fetching submissions:', error);
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching submissions'
     );
   }
 };

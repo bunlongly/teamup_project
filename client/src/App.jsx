@@ -19,6 +19,7 @@ import ProjectDetailPage from './pages/ProjectDetailPage';
 import MyProjects from './pages/MyProjects';
 import MyProjectDetailPage from './pages/MyProjectDetailPage';
 import TaskDetailPage from './pages/TaskDetailPage';
+import ChatPage from './pages/ChatPage';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -126,6 +127,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <TaskDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/chat'
+            element={
+              <ProtectedRoute>
+                <ChatPage />
               </ProtectedRoute>
             }
           />

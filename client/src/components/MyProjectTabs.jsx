@@ -1,3 +1,4 @@
+// MyProjectTabs.jsx
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
@@ -21,33 +22,33 @@ function MyProjectTabs({
   project,
   ownerName,
   onTaskCreated,
-  currentUser // NEW prop added
+  currentUser
 }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // Modal state variables for editing/deleting tasks
+  // Modal state variables
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // Filter state for tasks
+  // Filter state
   const [taskFilter, setTaskFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [teamMemberFilter, setTeamMemberFilter] = useState('');
   const [displayCount, setDisplayCount] = useState(15);
 
-  // Safely determine if the current user is the owner of the project
+  // Determine if the current user is the project owner
   const currentUserId = currentUser?.id || currentUser?.userId || '';
   const ownerId = project?.user?.id || '';
   const isOwner =
     currentUserId && ownerId && String(currentUserId) === String(ownerId);
 
-  // Debug logging for owner check
+  // Debug logging
   console.log('currentUser:', currentUser);
   console.log('project.user:', project?.user);
   console.log(
@@ -58,6 +59,11 @@ function MyProjectTabs({
     'isOwner:',
     isOwner
   );
+
+  // Define available tabs (only show "Submitted" for owner)
+  const availableTabs = isOwner
+    ? ['Task', 'Submitted', 'Team']
+    : ['Task', 'Team'];
 
   // Fetch tasks for the current project
   useEffect(() => {
@@ -80,13 +86,12 @@ function MyProjectTabs({
     }
   }, [project, token]);
 
-  // Filter tasks based on name, status, and assigned team member
-  const filteredTasks = tasks.filter(task => {
+  // Base filter for tasks (by name, status, team member)
+  const baseFilteredTasks = tasks.filter(task => {
     const matchesName = task.name
       .toLowerCase()
       .includes(taskFilter.toLowerCase());
     const matchesStatus = statusFilter ? task.status === statusFilter : true;
-
     let matchesMember = true;
     if (teamMemberFilter) {
       if (teamMemberFilter === 'notAssigned') {
@@ -99,10 +104,27 @@ function MyProjectTabs({
     return matchesName && matchesStatus && matchesMember;
   });
 
-  // Limit displayed tasks based on displayCount
+  // Further filter tasks based on active tab:
+  // - "Task" tab: tasks with no submissions
+  // - "Submitted" tab: tasks with one or more submissions
+  // - "Team" tab: tasks are not shown (empty list)
+  let filteredTasks = [];
+  if (activeTab === 'Task') {
+    filteredTasks = baseFilteredTasks.filter(
+      t => !t.submissions || t.submissions.length === 0
+    );
+  } else if (activeTab === 'Submitted') {
+    filteredTasks = baseFilteredTasks.filter(
+      t => t.submissions && t.submissions.length > 0
+    );
+  } else {
+    filteredTasks = [];
+  }
+
+  // Limit displayed tasks (for pagination)
   const tasksToDisplay = filteredTasks.slice(0, displayCount);
 
-  // Compute task summary counts
+  // Compute summary counts
   const totalCount = tasks.length;
   const backlogCount = tasks.filter(task => task.status === 'BACKLOG').length;
   const reviewCount = tasks.filter(task => task.status === 'REVIEW').length;
@@ -111,7 +133,7 @@ function MyProjectTabs({
   ).length;
   const finishedCount = tasks.filter(task => task.status === 'FINISHED').length;
 
-  // Handler for deleting a task
+  // Handlers for delete/update
   const handleDeleteTask = async taskId => {
     try {
       await axios.delete(`http://localhost:5200/api/tasks/${taskId}`, {
@@ -126,7 +148,6 @@ function MyProjectTabs({
     }
   };
 
-  // Handler for updating a task
   const handleUpdateTask = updatedTask => {
     setTasks(prev =>
       prev.map(task => (task.id === updatedTask.id ? updatedTask : task))
@@ -135,29 +156,22 @@ function MyProjectTabs({
     alert('Task updated successfully!');
   };
 
-  // Callback when a new task is created
   const handleTaskCreated = newTask => {
     setTasks(prev => [...prev, newTask]);
     if (onTaskCreated) onTaskCreated(newTask);
     alert('Task created successfully!');
   };
 
-  // For the TEAM tab, include the owner if not already in teamMembers
+  // For the TEAM tab: include project owner with team members
   const teamMembersWithOwner =
     project && project.user
-      ? [
-          project.user,
-          ...teamMembers.filter(member => member.id !== project.user.id)
-        ]
+      ? [project.user, ...teamMembers.filter(m => m.id !== project.user.id)]
       : teamMembers;
 
-  // For the team member filter dropdown, include the owner too
+  // For dropdown filters, include the owner as well
   const assignableMembersForFilter =
     project && project.user
-      ? [
-          project.user,
-          ...teamMembers.filter(member => member.id !== project.user.id)
-        ]
+      ? [project.user, ...teamMembers.filter(m => m.id !== project.user.id)]
       : teamMembers;
 
   return (
@@ -165,7 +179,7 @@ function MyProjectTabs({
       {/* Tabs */}
       <div className='mb-4 border-b'>
         <ul className='flex space-x-6'>
-          {['Task', 'Team'].map(tab => (
+          {availableTabs.map(tab => (
             <li
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -181,27 +195,132 @@ function MyProjectTabs({
         </ul>
       </div>
 
-      {activeTab === 'Task' ? (
+      {/* TEAM TAB */}
+      {activeTab === 'Team' && (
+        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
+          {/* Left Column: Team Members */}
+          <div className='lg:col-span-8 space-y-4'>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
+              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
+                {project && project.user && (
+                  <>
+                    {teamMembersWithOwner.map(member => (
+                      <div
+                        key={member.id}
+                        className='flex flex-col items-center p-2 bg-gray-50 rounded'
+                      >
+                        <img
+                          src={member.imageUrl || fallbackLogo}
+                          alt='Member'
+                          className='w-16 h-16 object-cover rounded-full mb-2'
+                        />
+                        <p className='font-medium'>
+                          {member.firstName
+                            ? `${member.firstName} ${member.lastName}`
+                            : member.name || 'No Name'}
+                        </p>
+                        <p className='text-xs text-gray-500'>
+                          {member.jobTitle || member.role || 'No job title'}
+                        </p>
+                        {member.id === project.user.id && (
+                          <p className='text-xs text-blue-600 font-semibold'>
+                            Owner
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-xl font-semibold mb-3'>
+                Add New Team Member
+              </h2>
+              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
+                + Add Member
+              </button>
+            </div>
+          </div>
+          {/* Right Column: Project Overview & Team Status */}
+          <div className='lg:col-span-4 space-y-4'>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
+              <div className='flex items-center mb-2'>
+                <img
+                  src={project.fileUrl || fallbackLogo}
+                  alt='Project'
+                  className='w-16 h-16 object-cover rounded mr-4'
+                />
+                <div>
+                  <h3 className='font-bold text-xl'>
+                    {project.projectName || 'Untitled Project'}
+                  </h3>
+                  <p className='text-sm text-gray-600'>
+                    {project.projectDescription
+                      ? project.projectDescription.substring(0, 100) + '...'
+                      : 'No description provided.'}
+                  </p>
+                </div>
+              </div>
+              <div className='mt-4'>
+                <h3 className='font-semibold'>Owner Information</h3>
+                <div className='flex items-center mt-2'>
+                  <img
+                    src={project.user?.imageUrl || fallbackLogo}
+                    alt='Owner'
+                    className='w-12 h-12 object-cover rounded-full mr-3'
+                  />
+                  <div>
+                    <p className='font-bold'>{ownerName}</p>
+                    <p className='text-xs text-gray-500'>
+                      {project.user?.jobTitle || 'No job title'}
+                    </p>
+                    <p className='text-xs text-gray-500'>
+                      @{project.user?.username || 'username'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className='bg-white rounded-md shadow p-4'>
+              <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
+              <p className='text-sm text-gray-600'>
+                Active Members: {teamMembers?.length || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TASK or SUBMITTED Tabs */}
+      {(activeTab === 'Task' || activeTab === 'Submitted') && (
         <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
           {/* Left Column: Task List */}
           <div className='lg:col-span-8 space-y-6'>
             <div className='bg-white rounded-md shadow p-4 mb-6'>
-              <h2 className='text-xl font-semibold mb-3'>Current Tasks</h2>
+              <h2 className='text-xl font-semibold mb-3'>
+                {activeTab === 'Task' ? 'Current Tasks' : 'Submitted Tasks'}
+              </h2>
               {loadingTasks ? (
                 <p className='text-gray-600'>Loading tasks...</p>
               ) : filteredTasks.length === 0 ? (
-                <p className='text-gray-600'>No tasks match the filter.</p>
+                <p className='text-gray-600'>
+                  {activeTab === 'Task'
+                    ? 'No tasks match the filter.'
+                    : 'No submitted tasks found.'}
+                </p>
               ) : (
                 <div className='space-y-2'>
                   {tasksToDisplay.map(task => {
-                    // Mapping of status to color classes
+                    // Define status colors
                     const statusColors = {
                       BACKLOG: 'bg-yellow-100 text-yellow-800',
                       REVIEW: 'bg-purple-100 text-purple-800',
                       IN_PROGRESS: 'bg-blue-100 text-blue-800',
                       FINISHED: 'bg-green-100 text-green-800'
                     };
-
                     return (
                       <div
                         key={task.id}
@@ -232,34 +351,98 @@ function MyProjectTabs({
                               {task.status}
                             </span>
                           </div>
+                          {/* In the "Submitted" tab, show submission details if available */}
+                          {activeTab === 'Submitted' &&
+                            task.submissions &&
+                            task.submissions.length > 0 &&
+                            task.submissions[0]?.user && (
+                              <div className='mt-2 p-2 border-t border-gray-300'>
+                                <h3 className='font-semibold text-sm'>
+                                  Submission Details:
+                                </h3>
+                                <p className='text-xs'>
+                                  Submitted by:{' '}
+                                  {task.submissions[0].user.firstName}{' '}
+                                  {task.submissions[0].user.lastName}
+                                </p>
+                                <p className='text-xs'>
+                                  Comment:{' '}
+                                  {task.submissions[0].comment || 'No comment'}
+                                </p>
+                                {task.submissions[0].links && (
+                                  <ul className='list-disc list-inside text-xs'>
+                                    {(() => {
+                                      try {
+                                        const linksArr =
+                                          typeof task.submissions[0].links ===
+                                          'string'
+                                            ? JSON.parse(
+                                                task.submissions[0].links
+                                              )
+                                            : task.submissions[0].links;
+                                        return linksArr.map((link, idx) => (
+                                          <li
+                                            key={idx}
+                                            className='break-all text-blue-600'
+                                          >
+                                            {link}
+                                          </li>
+                                        ));
+                                      } catch (error) {
+                                        console.error(
+                                          'Error parsing submission links:',
+                                          error
+                                        );
+                                        return null;
+                                      }
+                                    })()}
+                                  </ul>
+                                )}
+                                {task.submissions[0].attachment && (
+                                  <div className='text-xs'>
+                                    <span>Attachment: </span>
+                                    <a
+                                      href={task.submissions[0].attachment}
+                                      target='_blank'
+                                      rel='noreferrer'
+                                      className='underline text-blue-600 break-all'
+                                    >
+                                      {task.submissions[0].attachment}
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                         </div>
-                        {/* Only show edit & delete buttons if current user is the owner */}
-                        {isOwner && (
-                          <div className='flex space-x-2'>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                setTaskToEdit(task);
-                                setShowEditModal(true);
-                              }}
-                              className='px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors'
-                              title='Edit Task'
-                            >
-                              <FaEdit />
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                setTaskToDelete(task);
-                                setShowDeleteModal(true);
-                              }}
-                              className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors'
-                              title='Delete Task'
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        )}
+                        {/* Only show edit & delete buttons in the "Task" tab */}
+                        {isOwner &&
+                          (activeTab === 'Task' ||
+                            activeTab === 'Submitted') && (
+                            <div className='flex space-x-2'>
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setTaskToEdit(task);
+                                  setShowEditModal(true);
+                                }}
+                                className='px-3 py-1 bg-yellow-500 text-white text-xs rounded hover:bg-yellow-600 transition-colors'
+                                title='Edit Task'
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setTaskToDelete(task);
+                                  setShowDeleteModal(true);
+                                }}
+                                className='px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors'
+                                title='Delete Task'
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          )}
                       </div>
                     );
                   })}
@@ -276,14 +459,12 @@ function MyProjectTabs({
             </div>
           </div>
 
-          {/* Right Column: Filter Panel, Summary, and Project Overview */}
+          {/* Right Column: Filter Panel, Summaries, Project Overview */}
           <div className='lg:col-span-4 space-y-4'>
-            {/* Filter & Summary Panel */}
             <div className='bg-gradient-to-r from-blue-500 to-blue-400 text-white rounded-md shadow p-4 mb-6'>
               <div className='flex items-center justify-between mb-3'>
                 <h2 className='text-lg font-semibold'>Task Summary</h2>
-                {/* Only show the "+ New Task" button if current user is the owner */}
-                {isOwner && (
+                {isOwner && activeTab === 'Task' && (
                   <button
                     onClick={() => setShowCreateModal(true)}
                     className='px-3 py-1 bg-white text-blue-500 rounded hover:bg-gray-200 transition-colors'
@@ -340,14 +521,13 @@ function MyProjectTabs({
                 >
                   <option value=''>All Team Members</option>
                   <option value='notAssigned'>Not Assigned</option>
-                  {assignableMembersForFilter &&
-                    assignableMembersForFilter.map(member => (
-                      <option key={member.id} value={member.id}>
-                        {member.firstName
-                          ? `${member.firstName} ${member.lastName}`
-                          : member.name || 'No Name'}
-                      </option>
-                    ))}
+                  {assignableMembersForFilter.map(member => (
+                    <option key={member.id} value={member.id}>
+                      {member.firstName
+                        ? `${member.firstName} ${member.lastName}`
+                        : member.name || 'No Name'}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -402,107 +582,6 @@ function MyProjectTabs({
             </div>
           </div>
         </div>
-      ) : (
-        // TEAM TAB
-        <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-          {/* Left Column: Team Members */}
-          <div className='lg:col-span-8 space-y-4'>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>Team Members</h2>
-              <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-                {project && project.user && (
-                  <>
-                    {[
-                      project.user,
-                      ...teamMembers.filter(
-                        member => member.id !== project.user.id
-                      )
-                    ].map(member => (
-                      <div
-                        key={member.id}
-                        className='flex flex-col items-center p-2 bg-gray-50 rounded'
-                      >
-                        <img
-                          src={member.imageUrl || fallbackLogo}
-                          alt='Member'
-                          className='w-16 h-16 object-cover rounded-full mb-2'
-                        />
-                        <p className='font-medium'>
-                          {member.firstName
-                            ? `${member.firstName} ${member.lastName}`
-                            : member.name || 'No Name'}
-                        </p>
-                        <p className='text-xs text-gray-500'>
-                          {member.jobTitle || member.role || 'No job title'}
-                        </p>
-                        {member.id === project.user.id && (
-                          <p className='text-xs text-blue-600 font-semibold'>
-                            Owner
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>
-                Add New Team Member
-              </h2>
-              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
-                + Add Member
-              </button>
-            </div>
-          </div>
-          <div className='lg:col-span-4 space-y-4'>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-lg font-semibold mb-2'>Project Overview</h2>
-              <div className='flex items-center mb-2'>
-                <img
-                  src={project.fileUrl || fallbackLogo}
-                  alt='Project'
-                  className='w-16 h-16 object-cover rounded mr-4'
-                />
-                <div>
-                  <h3 className='font-bold text-xl'>
-                    {project.projectName || 'Untitled Project'}
-                  </h3>
-                  <p className='text-sm text-gray-600'>
-                    {project.projectDescription
-                      ? project.projectDescription.substring(0, 100) + '...'
-                      : 'No description provided.'}
-                  </p>
-                </div>
-              </div>
-              <div className='mt-4'>
-                <h3 className='font-semibold'>Owner Information</h3>
-                <div className='flex items-center mt-2'>
-                  <img
-                    src={project.user?.imageUrl || fallbackLogo}
-                    alt='Owner'
-                    className='w-12 h-12 object-cover rounded-full mr-3'
-                  />
-                  <div>
-                    <p className='font-bold'>{ownerName}</p>
-                    <p className='text-xs text-gray-500'>
-                      {project.user?.jobTitle || 'No job title'}
-                    </p>
-                    <p className='text-xs text-gray-500'>
-                      @{project.user?.username || 'username'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-lg font-semibold mb-2'>Team Status</h2>
-              <p className='text-sm text-gray-600'>
-                Active Members: {teamMembers?.length || 0}
-              </p>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Modals */}
@@ -543,7 +622,7 @@ MyProjectTabs.propTypes = {
   project: PropTypes.object.isRequired,
   ownerName: PropTypes.string.isRequired,
   onTaskCreated: PropTypes.func,
-  currentUser: PropTypes.object.isRequired // NEW prop validation
+  currentUser: PropTypes.object.isRequired
 };
 
 export default MyProjectTabs;

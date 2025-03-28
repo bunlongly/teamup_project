@@ -77,11 +77,17 @@ function MyCandidatesPage() {
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setApplications(prev =>
-        prev.map(app =>
-          app.id === applicationId ? { ...app, status: newStatus } : app
-        )
-      );
+      if (newStatus === 'APPROVED') {
+        // Remove the application from the list if approved
+        setApplications(prev => prev.filter(app => app.id !== applicationId));
+      } else {
+        // Otherwise, update its status
+        setApplications(prev =>
+          prev.map(app =>
+            app.id === applicationId ? { ...app, status: newStatus } : app
+          )
+        );
+      }
     } catch (error) {
       console.error('Error updating application status:', error);
     }

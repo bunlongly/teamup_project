@@ -7,6 +7,32 @@ import { formatImage } from '../middleware/multerMiddleware.js';
 
 const prisma = new PrismaClient();
 
+export const searchUsers = async (req, res) => {
+  const { search } = req.query;
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: search } },
+          { lastName: { contains: search } },
+          { username: { contains: search } }
+        ]
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        username: true,
+        imageUrl: true
+      }
+    });
+    return res.json({ data: users });
+  } catch (error) {
+    console.error('Error searching users:', error);
+    return res.status(500).json({ error: 'Error searching users' });
+  }
+};
+
 // Remove password field from user objects
 const removePassword = users =>
   users.map(user => {

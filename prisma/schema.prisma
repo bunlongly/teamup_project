@@ -53,6 +53,11 @@ model User {
 
   applications          Application[] @relation("UserApplications")
   tasks                 Task[]
+  submissions   Submission[]
+
+  chatParticipants ChatParticipant[]
+  customizations ChatCustomization[]
+  messages         Message[]
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -208,6 +213,8 @@ model Task {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  submissions  Submission[]
+
   // Relations
   assignedTo   User?      @relation(fields: [assignedToId], references: [id])
   post         Post       @relation(fields: [postId], references: [id])
@@ -219,4 +226,88 @@ enum TaskStatus {
   REVIEW
   IN_PROGRESS
   FINISHED
+}
+
+
+model Submission {
+  id           String           @id @default(uuid())
+  userId       String           // the user who submits the work
+  taskId       String           // the related task
+  comment      String?          // the submission message or comment
+  links        Json?            // JSON array of submitted links (e.g., ["https://github.com/...", "https://figma.com/..."])
+  attachment   String?          // URL for an uploaded file/image
+  reportReason String?          // optional field if a report is filed on the submission
+  status       SubmissionStatus @default(SUBMITTED)
+
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+  task Task @relation(fields: [taskId], references: [id])
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+
+model Chat {
+  id            String            @id @default(uuid())
+  isGroup       Boolean           @default(false)
+  chatName      String?           // For group chats, you can set a custom name
+  participants  ChatParticipant[]
+  messages      Message[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  customizations ChatCustomization[]
+}
+
+model ChatParticipant {
+  chatId     String
+  userId     String
+  role       ChatParticipantRole @default(PARTICIPANT)
+  joinedAt   DateTime           @default(now())
+
+  chat       Chat   @relation(fields: [chatId], references: [id])
+  user       User   @relation(fields: [userId], references: [id])
+
+  @@id([chatId, userId])
+}
+
+enum ChatParticipantRole {
+  ADMIN
+  PARTICIPANT
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  chatId      String
+  senderId    String
+  content     String?  // Message text content (optional if only an attachment is sent)
+  attachment  String?  // URL to an attachment (e.g., an image, video, etc.)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chat        Chat     @relation(fields: [chatId], references: [id])
+  sender      User     @relation(fields: [senderId], references: [id])
+}
+
+
+model ChatCustomization {
+  id           String   @id @default(uuid())
+  chatId       String
+  userId       String
+  background   String?  // e.g. "/images/mountains.jpg" or custom URL
+  textColor    String?  // e.g. "#FFFFFF"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  chat         Chat     @relation(fields: [chatId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([chatId, userId]) // Each user can have only one customization per chat
 }
