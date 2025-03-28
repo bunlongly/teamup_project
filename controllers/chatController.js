@@ -7,20 +7,47 @@ const prisma = new PrismaClient();
 // Create a new chat (individual or group)
 export const createChat = async (req, res) => {
   const { isGroup, chatName, participantIds } = req.body;
-  const currentUser = req.user; // Should be set by your auth middleware
 
-  if (!currentUser) {
-    return errorResponse(res, StatusCodes.UNAUTHORIZED, 'User not authenticated');
+  // Use req.user if available; fallback to userId from body
+  const currentUser = req.user || { userId: req.body.userId };
+
+  // Use a helper variable that looks for either id or userId in the token payload
+  const currentUserId = currentUser.id || currentUser.userId;
+
+  console.log('Current User:', currentUser);
+  console.log('Current User ID:', currentUserId);
+
+  if (!currentUserId) {
+    return errorResponse(
+      res,
+      StatusCodes.UNAUTHORIZED,
+      'User not authenticated or missing user id'
+    );
   }
 
   try {
-    // Ensure the current user is included
+    // Ensure the current user is included in the participantIds
     let participants = Array.isArray(participantIds) ? participantIds : [];
-    if (!participants.includes(currentUser.id)) {
-      participants.push(currentUser.id);
+    console.log('Participant IDs from request:', participants);
+
+    if (!participants.includes(currentUserId)) {
+      participants.push(currentUserId);
     }
 
-    // For one-on-one chats, you may want to enforce exactly two participants
+    console.log('Final participant IDs:', participants);
+
+    // Check for undefined values
+    const undefinedParticipants = participants.filter(id => id === undefined);
+    if (undefinedParticipants.length > 0) {
+      console.error('Found undefined participant IDs:', undefinedParticipants);
+      return errorResponse(
+        res,
+        StatusCodes.BAD_REQUEST,
+        'One or more participant IDs are undefined'
+      );
+    }
+
+    // For individual chats, enforce exactly two participants
     if (!isGroup && participants.length !== 2) {
       return errorResponse(
         res,
@@ -36,17 +63,22 @@ export const createChat = async (req, res) => {
         participants: {
           create: participants.map(userId => ({
             userId,
-            role: userId === currentUser.id ? 'ADMIN' : 'PARTICIPANT'
+            role: userId === currentUserId ? 'ADMIN' : 'PARTICIPANT'
           }))
         }
       },
       include: { participants: { include: { user: true } } }
     });
 
+    console.log('New Chat created:', newChat);
     return successResponse(res, 'Chat created successfully', newChat);
   } catch (error) {
     console.error('Error creating chat:', error);
-    return errorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Error creating chat');
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error creating chat'
+    );
   }
 };
 
@@ -63,10 +95,18 @@ export const addChatParticipant = async (req, res) => {
       },
       include: { user: true }
     });
-    return successResponse(res, 'Participant added successfully', newParticipant);
+    return successResponse(
+      res,
+      'Participant added successfully',
+      newParticipant
+    );
   } catch (error) {
     console.error('Error adding participant:', error);
-    return errorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Error adding participant');
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error adding participant'
+    );
   }
 };
 
@@ -76,7 +116,11 @@ export const sendMessage = async (req, res) => {
   const { content, attachment } = req.body;
   const currentUser = req.user;
   if (!currentUser) {
-    return errorResponse(res, StatusCodes.UNAUTHORIZED, 'User not authenticated');
+    return errorResponse(
+      res,
+      StatusCodes.UNAUTHORIZED,
+      'User not authenticated'
+    );
   }
   try {
     const newMessage = await prisma.message.create({
@@ -91,7 +135,11 @@ export const sendMessage = async (req, res) => {
     return successResponse(res, 'Message sent successfully', newMessage);
   } catch (error) {
     console.error('Error sending message:', error);
-    return errorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Error sending message');
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error sending message'
+    );
   }
 };
 
@@ -107,7 +155,11 @@ export const getChatMessages = async (req, res) => {
     return successResponse(res, 'Messages fetched successfully', messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
-    return errorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching messages');
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching messages'
+    );
   }
 };
 
@@ -115,7 +167,11 @@ export const getChatMessages = async (req, res) => {
 export const getUserChats = async (req, res) => {
   const currentUser = req.user;
   if (!currentUser) {
-    return errorResponse(res, StatusCodes.UNAUTHORIZED, 'User not authenticated');
+    return errorResponse(
+      res,
+      StatusCodes.UNAUTHORIZED,
+      'User not authenticated'
+    );
   }
   try {
     const chats = await prisma.chat.findMany({
@@ -135,6 +191,10 @@ export const getUserChats = async (req, res) => {
     return successResponse(res, 'Chats fetched successfully', chats);
   } catch (error) {
     console.error('Error fetching chats:', error);
-    return errorResponse(res, StatusCodes.INTERNAL_SERVER_ERROR, 'Error fetching chats');
+    return errorResponse(
+      res,
+      StatusCodes.INTERNAL_SERVER_ERROR,
+      'Error fetching chats'
+    );
   }
 };
