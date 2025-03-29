@@ -7,6 +7,8 @@ const ChatList = ({ onSelectChat }) => {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredChats, setFilteredChats] = useState([]);
   const token = localStorage.getItem('token');
 
   const fetchChats = async () => {
@@ -27,24 +29,56 @@ const ChatList = ({ onSelectChat }) => {
     fetchChats();
   }, [token]);
 
+  // Filter chats based on search term.
+  useEffect(() => {
+    const lowerSearch = searchTerm.toLowerCase();
+    const filtered = chats.filter(chat => {
+      if (chat.isGroup) {
+        return chat.chatName?.toLowerCase().includes(lowerSearch);
+      } else {
+        // For individual chats, search by participants' first names.
+        const names = chat.participants.map(p =>
+          p.user.firstName.toLowerCase()
+        );
+        return names.some(name => name.includes(lowerSearch));
+      }
+    });
+    setFilteredChats(filtered);
+  }, [searchTerm, chats]);
+
   // When a new chat is created, add it to the top of the list
   const handleChatCreated = newChat => {
     setChats(prev => [newChat, ...prev]);
   };
 
   return (
-    <div className='h-full flex flex-col'>
-      {/* Pinned header */}
-      <div className='p-4 border-b'>
-        <h2 className='text-xl font-bold'>Your Chats</h2>
+    <div className='h-full flex flex-col bg-gray-100'>
+      {/* Top Controls: Header, New Chat Button, and Search */}
+      <div className='p-4 border-b bg-white shadow-md'>
+        <div className='flex justify-between items-center mb-4'>
+          <h2 className='text-2xl font-bold text-gray-800'>Your Chats</h2>
+          <button
+            onClick={() => setShowModal(true)}
+            className='px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors'
+          >
+            + New Chat
+          </button>
+        </div>
+        <input
+          type='text'
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          placeholder='Search chats or participants...'
+          className='w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500'
+        />
       </div>
 
-      {/* Chat list */}
-      <div className='flex-1 p-2 space-y-3 overflow-y-auto'>
+      {/* Chat List */}
+      <div className='flex-1 p-4 overflow-y-auto'>
         {loading ? (
-          <p>Loading chats...</p>
-        ) : (
-          chats.map(chat => {
+          <p className='text-center text-gray-500'>Loading chats...</p>
+        ) : (searchTerm ? filteredChats : chats).length > 0 ? (
+          (searchTerm ? filteredChats : chats).map(chat => {
             // Safely get last message from messages array
             const lastMessage =
               (chat.messages || []).length > 0
@@ -53,37 +87,30 @@ const ChatList = ({ onSelectChat }) => {
             return (
               <div
                 key={chat.id}
-                className='p-3 bg-gray-50 border rounded cursor-pointer hover:bg-gray-100'
+                className='p-4 bg-white rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 transition-colors mb-3'
                 onClick={() => onSelectChat(chat)}
               >
-                <p className='font-semibold'>
+                <p className='text-lg font-semibold text-gray-800'>
                   {chat.isGroup ? chat.chatName || 'Group Chat' : 'Direct Chat'}
                 </p>
-                <p className='text-sm text-gray-600'>
+                <p className='text-sm text-gray-600 mt-1'>
                   Participants:{' '}
                   {chat.participants.map(p => p.user.firstName).join(', ')}
                 </p>
                 {lastMessage && (
-                  <p className='text-sm text-gray-500'>
+                  <p className='text-sm text-gray-500 mt-2'>
                     Last message: {lastMessage.content}
                   </p>
                 )}
               </div>
             );
           })
+        ) : (
+          <p className='text-center text-gray-500'>No chats found.</p>
         )}
       </div>
 
-      {/* New Chat button pinned at bottom */}
-      <div className='p-4 border-t'>
-        <button
-          onClick={() => setShowModal(true)}
-          className='w-full py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700'
-        >
-          + New Chat
-        </button>
-      </div>
-
+      {/* Modal for Creating New Chat */}
       {showModal && (
         <CreateChatModal
           onClose={() => setShowModal(false)}
