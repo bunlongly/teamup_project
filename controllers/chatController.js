@@ -112,36 +112,38 @@ export const addChatParticipant = async (req, res) => {
 
 // Send a message in a chat
 export const sendMessage = async (req, res) => {
-  const { chatId } = req.params;
-  const { content, attachment } = req.body;
-  const currentUser = req.user;
-  if (!currentUser) {
-    return errorResponse(
-      res,
-      StatusCodes.UNAUTHORIZED,
-      'User not authenticated'
-    );
-  }
-  try {
-    const newMessage = await prisma.message.create({
-      data: {
-        chatId,
-        senderId: currentUser.id,
-        content,
-        attachment
-      },
-      include: { sender: true }
-    });
-    return successResponse(res, 'Message sent successfully', newMessage);
-  } catch (error) {
-    console.error('Error sending message:', error);
-    return errorResponse(
-      res,
-      StatusCodes.INTERNAL_SERVER_ERROR,
-      'Error sending message'
-    );
-  }
-};
+    const { chatId } = req.params;
+    const { content, attachment } = req.body;
+    const currentUser = req.user;
+    // Use a helper that checks for id or userId
+    const senderId = currentUser.id || currentUser.userId;
+    
+  
+    if (!senderId) {
+      return errorResponse(res, StatusCodes.UNAUTHORIZED, 'User not authenticated');
+    }
+  
+    try {
+      const newMessage = await prisma.message.create({
+        data: {
+          chatId,
+          senderId,
+          content,
+          attachment
+        },
+        include: { sender: true }
+      });
+      return successResponse(res, 'Message sent successfully', newMessage);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return errorResponse(
+        res,
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        'Error sending message'
+      );
+    }
+  };
+  
 
 // Get messages from a chat
 export const getChatMessages = async (req, res) => {
@@ -198,3 +200,5 @@ export const getUserChats = async (req, res) => {
     );
   }
 };
+
+
