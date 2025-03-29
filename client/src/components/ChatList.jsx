@@ -1,6 +1,7 @@
 // ChatList.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import FlipMove from 'react-flip-move';
 import CreateChatModal from './CreateChatModal';
 
 const ChatList = ({ onSelectChat }) => {
@@ -46,6 +47,24 @@ const ChatList = ({ onSelectChat }) => {
     setFilteredChats(filtered);
   }, [searchTerm, chats]);
 
+  // Compute sorted chats based on last activity.
+  // We assume each chat's last activity is determined by the 'createdAt'
+  // property of the last message in chat.messages.
+  const getLastActivityTime = chat => {
+    if (chat.messages && chat.messages.length > 0) {
+      return new Date(
+        chat.messages[chat.messages.length - 1].createdAt
+      ).getTime();
+    }
+    return 0;
+  };
+
+  // Use filteredChats if searchTerm is present, otherwise use all chats.
+  const baseChats = searchTerm ? filteredChats : chats;
+  const sortedChats = baseChats.slice().sort((a, b) => {
+    return getLastActivityTime(b) - getLastActivityTime(a);
+  });
+
   // When a new chat is created, add it to the top of the list
   const handleChatCreated = newChat => {
     setChats(prev => [newChat, ...prev]);
@@ -73,38 +92,42 @@ const ChatList = ({ onSelectChat }) => {
         />
       </div>
 
-      {/* Chat List */}
+      {/* Chat List with animated reordering */}
       <div className='flex-1 p-4 overflow-y-auto'>
         {loading ? (
           <p className='text-center text-gray-500'>Loading chats...</p>
-        ) : (searchTerm ? filteredChats : chats).length > 0 ? (
-          (searchTerm ? filteredChats : chats).map(chat => {
-            // Safely get last message from messages array
-            const lastMessage =
-              (chat.messages || []).length > 0
-                ? chat.messages[chat.messages.length - 1]
-                : null;
-            return (
-              <div
-                key={chat.id}
-                className='p-4 bg-white rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 transition-colors mb-3'
-                onClick={() => onSelectChat(chat)}
-              >
-                <p className='text-lg font-semibold text-gray-800'>
-                  {chat.isGroup ? chat.chatName || 'Group Chat' : 'Direct Chat'}
-                </p>
-                <p className='text-sm text-gray-600 mt-1'>
-                  Participants:{' '}
-                  {chat.participants.map(p => p.user.firstName).join(', ')}
-                </p>
-                {lastMessage && (
-                  <p className='text-sm text-gray-500 mt-2'>
-                    Last message: {lastMessage.content}
+        ) : sortedChats.length > 0 ? (
+          <FlipMove duration={500} easing='ease-out'>
+            {sortedChats.map(chat => {
+              // Safely get last message from messages array
+              const lastMessage =
+                (chat.messages || []).length > 0
+                  ? chat.messages[chat.messages.length - 1]
+                  : null;
+              return (
+                <div
+                  key={chat.id}
+                  className='p-4 bg-white rounded-lg shadow-sm cursor-pointer hover:bg-blue-50 transition-colors mb-3'
+                  onClick={() => onSelectChat(chat)}
+                >
+                  <p className='text-lg font-semibold text-gray-800'>
+                    {chat.isGroup
+                      ? chat.chatName || 'Group Chat'
+                      : 'Direct Chat'}
                   </p>
-                )}
-              </div>
-            );
-          })
+                  <p className='text-sm text-gray-600 mt-1'>
+                    Participants:{' '}
+                    {chat.participants.map(p => p.user.firstName).join(', ')}
+                  </p>
+                  {lastMessage && (
+                    <p className='text-sm text-gray-500 mt-2'>
+                      Last message: {lastMessage.content}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </FlipMove>
         ) : (
           <p className='text-center text-gray-500'>No chats found.</p>
         )}
