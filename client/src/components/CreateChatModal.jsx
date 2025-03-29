@@ -23,14 +23,11 @@ const CreateChatModal = ({ onClose, onChatCreated }) => {
       if (searchQuery.trim()) {
         console.log('Searching for:', searchQuery);
         axios
-          // Adjust URL if your user routes are mounted on /api/users
           .get(
             `http://localhost:5200/api/user/search?search=${encodeURIComponent(
               searchQuery
             )}`,
-            {
-              headers: { Authorization: `Bearer ${token}` }
-            }
+            { headers: { Authorization: `Bearer ${token}` } }
           )
           .then(res => {
             console.log('Search results:', res.data.data);
@@ -42,7 +39,7 @@ const CreateChatModal = ({ onClose, onChatCreated }) => {
       } else {
         setSearchResults([]);
       }
-    }, 300); // delay 300ms
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, token]);
@@ -99,14 +96,16 @@ const CreateChatModal = ({ onClose, onChatCreated }) => {
       onClose();
     } catch (error) {
       console.error('Error creating chat:', error);
-      // Optionally display an error message here
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50'>
+    <div
+      className='fixed inset-0 flex items-center justify-center z-50'
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+    >
       <div className='bg-white rounded p-6 w-96'>
         <h2 className='text-xl font-bold mb-4'>Create New Chat</h2>
         <form onSubmit={handleSubmit}>
@@ -148,15 +147,28 @@ const CreateChatModal = ({ onClose, onChatCreated }) => {
             />
             {searchResults.length > 0 && (
               <ul className='mt-2 border rounded max-h-40 overflow-y-auto'>
-                {searchResults.map(user => (
-                  <li
-                    key={user.id}
-                    className='p-2 hover:bg-gray-100 cursor-pointer'
-                    onClick={() => addParticipant(user)}
-                  >
-                    {user.firstName} {user.lastName} ({user.username})
-                  </li>
-                ))}
+                {searchResults.map(user => {
+                  // Check if this user is already selected
+                  const isSelected = selectedParticipants.some(
+                    p => p.id === user.id
+                  );
+
+                  return (
+                    <li
+                      key={user.id}
+                      // If already selected, apply a gray background; otherwise show hover
+                      className={`p-2 cursor-pointer ${
+                        isSelected ? 'bg-gray-200' : 'hover:bg-gray-100'
+                      }`}
+                      // Only allow clicking if not selected
+                      onClick={() => {
+                        if (!isSelected) addParticipant(user);
+                      }}
+                    >
+                      {user.firstName} {user.lastName} ({user.username})
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -167,7 +179,7 @@ const CreateChatModal = ({ onClose, onChatCreated }) => {
                 {selectedParticipants.map(user => (
                   <li
                     key={user.id}
-                    className='flex justify-between items-center'
+                    className='flex justify-between items-center bg-gray-200 p-1 rounded'
                   >
                     <span>
                       {user.firstName} {user.lastName}

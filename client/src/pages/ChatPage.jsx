@@ -10,7 +10,8 @@ import bear from '../assets/css/bear.jpeg';
 const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatBackground, setChatBackground] = useState(''); // default background
-  const [chatColor, setChatColor] = useState('#000000'); // default text color (black)
+  // Default chatColor is blue (#0046b0) but you can choose other colors, including black.
+  const [chatColor, setChatColor] = useState('#0046b0');
 
   // Load stored background and color for the selected chat
   useEffect(() => {
@@ -18,17 +19,9 @@ const ChatPage = () => {
       const storedBg = localStorage.getItem(
         `chatBackground_${selectedChat.id}`
       );
-      if (storedBg) {
-        setChatBackground(storedBg);
-      } else {
-        setChatBackground('');
-      }
+      setChatBackground(storedBg || '');
       const storedColor = localStorage.getItem(`chatColor_${selectedChat.id}`);
-      if (storedColor) {
-        setChatColor(storedColor);
-      } else {
-        setChatColor('#000000');
-      }
+      setChatColor(storedColor || '#0046b0');
     }
   }, [selectedChat]);
 
@@ -48,7 +41,7 @@ const ChatPage = () => {
     }
   };
 
-  // Inline RightColumn component
+  // Inline RightColumn component displaying real data
   const RightColumn = ({
     chat,
     chatBackground,
@@ -62,7 +55,6 @@ const ChatPage = () => {
       );
     }
     const participants = chat.participants || [];
-
     return (
       <div className='p-4 h-full flex flex-col'>
         {/* Chat Info */}
@@ -70,7 +62,9 @@ const ChatPage = () => {
           <h2 className='text-xl font-bold mb-1'>
             {chat.isGroup ? chat.chatName || 'Group Chat' : 'Direct Chat'}
           </h2>
-          <p className='text-sm text-gray-500'>Created by ???, May 2020</p>
+          <p className='text-sm text-gray-500'>
+            Created by: {chat.createdBy ? chat.createdBy.name : 'Admin'}
+          </p>
         </div>
 
         {/* Participants */}
@@ -80,11 +74,21 @@ const ChatPage = () => {
             {participants.map((p, idx) => (
               <div key={idx} className='flex items-center space-x-2'>
                 <img
-                  src={`https://i.pravatar.cc/32?u=${p.user.firstName}`}
+                  src={
+                    p.user.imageUrl ||
+                    `https://i.pravatar.cc/32?u=${p.user.firstName}`
+                  }
                   alt={p.user.firstName}
                   className='w-8 h-8 rounded-full'
                 />
-                <span className='text-sm'>{p.user.firstName}</span>
+                <div className='flex flex-col'>
+                  <span className='text-sm'>
+                    {p.user.firstName} {p.user.lastName || ''}
+                  </span>
+                  {p.role && (
+                    <span className='text-xs text-gray-500'>{p.role}</span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -122,7 +126,7 @@ const ChatPage = () => {
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              Bear
+              Kitty
             </button>
             <button
               onClick={() => setChatBackground(space)}
@@ -142,14 +146,14 @@ const ChatPage = () => {
           <h3 className='text-md font-semibold mb-1'>Change Text Color</h3>
           <div className='flex space-x-2'>
             <button
-              onClick={() => setChatColor('#000000')}
+              onClick={() => setChatColor('#0046b0')}
               className={`px-3 py-1 rounded ${
-                chatColor === '#000000'
+                chatColor === '#0046b0'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              Black
+              Blue
             </button>
             <button
               onClick={() => setChatColor('#ffffff')}
@@ -172,14 +176,14 @@ const ChatPage = () => {
               Red
             </button>
             <button
-              onClick={() => setChatColor('#008000')}
+              onClick={() => setChatColor('#000000')}
               className={`px-3 py-1 rounded ${
-                chatColor === '#008000'
+                chatColor === '#000000'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700'
               }`}
             >
-              Green
+              Black
             </button>
           </div>
         </div>
@@ -194,15 +198,22 @@ const ChatPage = () => {
     );
   };
 
+  // Add prop types for RightColumn to validate chat.participants and others
   RightColumn.propTypes = {
     chat: PropTypes.shape({
       isGroup: PropTypes.bool,
       chatName: PropTypes.string,
+      createdBy: PropTypes.shape({
+        name: PropTypes.string
+      }),
       participants: PropTypes.arrayOf(
         PropTypes.shape({
           user: PropTypes.shape({
-            firstName: PropTypes.string.isRequired
-          }).isRequired
+            firstName: PropTypes.string.isRequired,
+            lastName: PropTypes.string,
+            imageUrl: PropTypes.string
+          }).isRequired,
+          role: PropTypes.string
         })
       )
     }),
@@ -218,16 +229,14 @@ const ChatPage = () => {
       <div className='w-1/4 bg-white border-r overflow-y-auto'>
         <ChatList onSelectChat={setSelectedChat} />
       </div>
-
       {/* Middle Column */}
       <div className='flex-1 flex flex-col overflow-hidden'>
         <ChatWindow
           chat={selectedChat}
           backgroundUrl={chatBackground}
-          textColor={chatColor}
+          headerColor={chatColor}
         />
       </div>
-
       {/* Right Column */}
       <div className='w-1/4 bg-white border-l overflow-y-auto'>
         <RightColumn
