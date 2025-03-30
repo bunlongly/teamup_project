@@ -217,18 +217,7 @@ function NavBar() {
                     className='bg-white rounded-l-full border border-gray-200 text-base text-gray-900 w-full px-3 py-1.5 focus:border-[#0046b0] focus:ring-2 focus:ring-[#0046b0]'
                   />
                   {/* Add Cancel button next to search input when expanded */}
-                  {searchExpanded && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm('');
-                        setSearchResults([]);
-                        setSearchExpanded(false);
-                      }}
-                      className='bg-white rounded-r-full border border-l-0 border-gray-200 px-3 py-1.5 text-gray-500 hover:text-gray-700'
-                    >
-                      <FontAwesomeIcon icon={faTimes} />
-                    </button>
-                  )}
+              
                 </div>
                 {/* Toggle search button (magnifying glass) */}
                 <button

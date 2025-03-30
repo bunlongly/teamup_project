@@ -25,6 +25,9 @@ function Projects() {
   const [technicalRoleFilter, setTechnicalRoleFilter] = useState('');
   const [platformFilter, setPlatformFilter] = useState('');
 
+  // Mobile filter visibility
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   // Fetch posts on mount
   useEffect(() => {
     axios
@@ -115,6 +118,7 @@ function Projects() {
       );
     });
     setFilteredProjects(filtered);
+    setShowMobileFilters(false); // Close mobile filters after applying
   };
 
   const handleResetFilters = () => {
@@ -125,13 +129,43 @@ function Projects() {
     setTechnicalRoleFilter('');
     setPlatformFilter('');
     setFilteredProjects(projects);
+    setShowMobileFilters(false); // Close mobile filters after resetting
   };
 
   return (
     <div className='w-11/12 mx-auto mt-8'>
+      {/* Mobile Filter Toggle Button - Only visible on small screens */}
+      <div className='md:hidden flex justify-between items-center mb-4'>
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors mr-2'
+          style={{ backgroundColor: '#0046b0' }}
+        >
+          {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+        </button>
+        <button
+          onClick={() => navigate('/projects/create')}
+          className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors ml-2'
+          style={{ backgroundColor: '#0046b0' }}
+        >
+          Create Post
+        </button>
+      </div>
+
       <div className='grid grid-cols-12 gap-6'>
-        {/* LEFT COLUMN: Project Feed */}
-        <div className='col-span-12 md:col-span-8 space-y-4'>
+        {/* LEFT COLUMN: Project Feed - Always comes first in DOM */}
+        <div className='col-span-12 lg:col-span-8 space-y-4'>
+          {/* Create Post Button - Hidden on mobile (shown in toggle bar) */}
+          <div className='hidden md:block'>
+            <button
+              onClick={() => navigate('/projects/create')}
+              className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors mb-4'
+              style={{ backgroundColor: '#0046b0' }}
+            >
+              Create Post
+            </button>
+          </div>
+
           {filteredProjects.length === 0 ? (
             <p className='text-gray-500'>
               No projects found. Try adjusting filters.
@@ -143,16 +177,12 @@ function Projects() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Filter Panel */}
-        <div className='col-span-12 md:col-span-4 space-y-4'>
-          <button
-            onClick={() => navigate('/projects/create')}
-            className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors'
-            style={{ backgroundColor: '#0046b0' }}
-          >
-            Create Post
-          </button>
-
+        {/* RIGHT COLUMN: Filter Panel - Now comes after project feed in DOM but appears on right for large screens */}
+        <div
+          className={`col-span-12 ${
+            showMobileFilters ? 'block' : 'hidden'
+          } md:block lg:col-span-4 space-y-4`}
+        >
           <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-bold mb-4'>Filter</h3>
 
@@ -304,7 +334,8 @@ function ProjectCard({ project }) {
   };
 
   // Navigate to the Apply page with project details.
-  const handleRoleClick = () => {
+  const handleRoleClick = e => {
+    e.stopPropagation(); // Prevent card click from triggering
     navigate('/apply', {
       state: {
         role: project.technicalRole,
@@ -325,12 +356,12 @@ function ProjectCard({ project }) {
 
   return (
     <div
-      className='bg-white rounded-md shadow overflow-hidden cursor-pointer'
+      className='bg-white rounded-md shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300'
       onClick={handleCardClick}
     >
-      <div className='flex p-4'>
+      <div className='flex flex-col sm:flex-row p-4'>
         {/* Left: Project image (displayed as a circle) */}
-        <div className='w-1/5 flex flex-col items-center justify-center space-y-2'>
+        <div className='w-full sm:w-1/5 flex flex-col items-center justify-center space-y-2 mb-4 sm:mb-0'>
           {/* Image */}
           {project.user.imageUrl ? (
             <img
@@ -360,39 +391,36 @@ function ProjectCard({ project }) {
         </div>
 
         {/* Right: Project details */}
-        <div className='w-4/5 pl-4'>
+        <div className='w-full sm:w-4/5 sm:pl-4'>
           <h2 className='text-lg font-bold mb-2'>
             {project.projectName || 'Untitled Project'}
           </h2>
 
           {/* Display platform and post type badge on the same line */}
-          <div className='flex items-center justify-between mb-2'>
-            <p className='text-sm text-gray-600'>
+          <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2'>
+            <p className='text-sm text-gray-600 mb-2 sm:mb-0'>
               <strong>Platform:</strong> {project.platform || 'N/A'}
             </p>
             {project.postType === 'RECRUITMENT' && (
-              <span className='px-2 py-1 text-xs font-semibold text-white bg-green-600 rounded-full'>
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-green-600 rounded-full self-start sm:self-auto'>
                 Recruitment
               </span>
             )}
             {project.postType === 'PROJECT_SEEKING' && (
-              <span className='px-2 py-1 text-xs font-semibold text-white bg-purple-600 rounded-full'>
+              <span className='px-2 py-1 text-xs font-semibold text-white bg-purple-600 rounded-full self-start sm:self-auto'>
                 Project Seeking
               </span>
             )}
           </div>
 
           {/* Basic metadata */}
-          <div className='flex flex-wrap text-sm text-gray-600 mb-2'>
-            <div className='mr-4'>
+          <div className='flex flex-col sm:flex-row flex-wrap text-sm text-gray-600 mb-2'>
+            <div className='mr-4 mb-1 sm:mb-0'>
               <strong>Project Type:</strong> {project.projectType || 'N/A'}
             </div>
             <div className='mr-4'>
               <strong>Duration:</strong> {project.duration || 'N/A'}
             </div>
-            {/* <div className='mr-4'>
-              <strong>Location:</strong> {project.location || 'N/A'}
-            </div> */}
           </div>
 
           {/* Description */}
@@ -404,7 +432,10 @@ function ProjectCard({ project }) {
             {project.projectDescription &&
               project.projectDescription.length > 100 && (
                 <button
-                  onClick={toggleDescription}
+                  onClick={e => {
+                    e.stopPropagation();
+                    toggleDescription();
+                  }}
                   className='text-blue-500 ml-1 underline text-xs'
                 >
                   {showFullDescription ? 'See Less' : 'See More'}
@@ -433,6 +464,7 @@ function ProjectCard({ project }) {
 
 ProjectCard.propTypes = {
   project: PropTypes.shape({
+    id: PropTypes.string,
     postType: PropTypes.string,
     projectName: PropTypes.string,
     projectDescription: PropTypes.string,
