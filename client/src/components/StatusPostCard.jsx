@@ -74,7 +74,7 @@ function StatusPostCard({ post }) {
           <img
             src={post.fileUrl}
             alt='Post Media'
-            className='w-full h-auto rounded-md'
+            className='w-full max-w-[500px] mx-auto rounded-md object-contain'
           />
         </div>
       )}
