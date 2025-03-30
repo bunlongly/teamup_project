@@ -17,24 +17,53 @@ const RecruitmentSuccessPage = () => {
       const formData = JSON.parse(recruitmentFormData);
       console.log('Recruitment form data:', formData);
 
-      hasCalledApi.current = true; // Mark as called before making the API call
-
-      axios
-        .post('http://localhost:5200/api/post/create', formData, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
+      const updateSubscription = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          // If a subscriptionPlan was saved in the formData, call the subscription create-or-update endpoint.
+          if (formData.subscriptionPlan) {
+            await axios.post(
+              'http://localhost:5200/api/subscription/create-or-update',
+              { subscriptionPlan: formData.subscriptionPlan },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
           }
-        })
-        .then(response => {
+        } catch (error) {
+          console.error(
+            'Error updating subscription during RecruitmentSuccessPage:',
+            error
+          );
+          // Optionally, you might want to toast an error here.
+        }
+      };
+
+      const createRecruitmentPost = async () => {
+        try {
+          const token = localStorage.getItem('token');
+          // Ensure the subscription record is created/updated before creating the post.
+          await updateSubscription();
+          // Now, create the recruitment post.
+          const response = await axios.post(
+            'http://localhost:5200/api/post/create',
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            }
+          );
           toast.success('Post created successfully!');
-          // Clear stored data after successful creation
+          // Clear stored data after successful creation.
           localStorage.removeItem('recruitmentFormData');
           navigate('/projects');
-        })
-        .catch(error => {
+        } catch (error) {
           toast.error('Error creating post');
           console.error('Error creating post:', error);
-        });
+        }
+      };
+
+      hasCalledApi.current = true;
+      createRecruitmentPost();
     }
   }, [navigate]);
 

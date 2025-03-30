@@ -1,17 +1,17 @@
 // routes/stripeRoutes.js
 import express from 'express';
 import Stripe from 'stripe';
-import { authenticateUser } from '../middleware/errorHandlerMiddleware.js'; // or your auth middleware
+import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 
 const router = express.Router();
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Hardcoded price for a recruitment post fee (in cents, e.g. $15.00)
-const RECRUITMENT_POST_PRICE = 1500;
+// Default price for a recruitment post fee (in cents) if no subscription plan is provided
+const DEFAULT_RECRUITMENT_POST_PRICE = 1500;
 
 router.post('/create-checkout-session', authenticateUser, async (req, res) => {
   try {
-    const { postType } = req.body; // Expected values: "RECRUITMENT", "STATUS", etc.
+    const { postType, subscriptionPlan } = req.body; // Now we expect subscriptionPlan as well
 
     // Only proceed if the post type is RECRUITMENT
     if (postType !== 'RECRUITMENT') {
@@ -19,6 +19,17 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
         .status(400)
         .json({ error: 'Payment is only required for recruitment posts.' });
     }
+
+    // Determine the price. If a subscription plan is provided, use that price (converted to cents).
+    const priceInCents =
+      subscriptionPlan && subscriptionPlan.price
+        ? subscriptionPlan.price * 100
+        : DEFAULT_RECRUITMENT_POST_PRICE;
+
+    // Optionally, customize the product name to include plan details
+    const productName = subscriptionPlan
+      ? `Recruitment Post Fee - ${subscriptionPlan.time} posts for $${subscriptionPlan.price}`
+      : 'Recruitment Post Fee';
 
     // Create a Stripe Checkout Session for one-time payment
     const session = await stripe.checkout.sessions.create({
@@ -29,9 +40,9 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: 'Recruitment Post Fee'
+              name: productName
             },
-            unit_amount: RECRUITMENT_POST_PRICE
+            unit_amount: priceInCents
           },
           quantity: 1
         }
@@ -40,12 +51,12 @@ router.post('/create-checkout-session', authenticateUser, async (req, res) => {
       cancel_url: `${process.env.CLIENT_URL}/recruitment-cancel`
     });
 
-    // Return the URL for the client to redirect to Stripe's Checkout
     res.json({ url: session.url });
   } catch (error) {
     console.error('Error creating checkout session:', error);
     return res.status(500).json({ error: 'Error creating checkout session' });
   }
 });
+
 
 export default router;

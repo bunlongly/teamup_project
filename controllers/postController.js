@@ -26,7 +26,6 @@ export const createPost = async (req, res) => {
   const { userId } = req.user;
   console.log('Creating post for user:', userId);
 
-  // Extract fields from req.body, including fileUrl if provided
   const {
     postType,
     content,
@@ -40,21 +39,14 @@ export const createPost = async (req, res) => {
     endDate,
     role,
     requirement,
-    fileUrl: fileUrlFromBody  // capture fileUrl from the body, if any
+    fileUrl: fileUrlFromBody
   } = req.body;
 
   if (!postType) {
-    return errorResponse(
-      res,
-      StatusCodes.BAD_REQUEST,
-      'postType is required'
-    );
+    return errorResponse(res, StatusCodes.BAD_REQUEST, 'postType is required');
   }
 
-  // Use the fileUrl from the request body by default
   let fileUrl = fileUrlFromBody || null;
-
-  // If a file is uploaded (via Multer), process it and overwrite fileUrl
   if (req.file) {
     try {
       const base64Image = formatImage(req.file);
@@ -71,6 +63,7 @@ export const createPost = async (req, res) => {
   }
 
   try {
+    // Create the post first
     const post = await prisma.post.create({
       data: {
         postType,
@@ -90,6 +83,36 @@ export const createPost = async (req, res) => {
       }
     });
 
+    // If this is a recruitment post, check and update the subscription.
+    if (postType === 'RECRUITMENT') {
+      try {
+        const subscription = await prisma.subscription.findUnique({
+          where: { userId }
+        });
+        if (!subscription || subscription.remainingPosts <= 0) {
+          return errorResponse(
+            res,
+            StatusCodes.BAD_REQUEST,
+            'You do not have any remaining recruitment posts. Please purchase a new plan.'
+          );
+        }
+        // Only decrement if remainingPosts is greater than 0.
+        const newRemaining = subscription.remainingPosts - 1;
+        // If newRemaining would be negative, set it to 0 (or return an error)
+        await prisma.subscription.update({
+          where: { userId },
+          data: {
+            remainingPosts: newRemaining < 0 ? 0 : newRemaining
+          }
+        });
+      } catch (subError) {
+        console.error(
+          'Error updating subscription after post creation:',
+          subError
+        );
+      }
+    }
+
     return successResponse(res, 'Post created successfully', post);
   } catch (error) {
     console.error('Error creating post:', error);
@@ -101,7 +124,6 @@ export const createPost = async (req, res) => {
     );
   }
 };
-
 
 export const getAllPosts = async (req, res) => {
   try {
