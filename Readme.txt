@@ -1,199 +1,82 @@
-📌 Step 4: Install Dependencies
+# 🧑‍💻 Technologies Used in the Project
 
-npm install express mysql2 sequelize dotenv http-status-codes bcryptjs jsonwebtoken cookie-parser cors express-rate-limit
+### 🔐 Authentication – Technologies & Tools Used
 
-Dependencies Explained:
-express → Web framework for building APIs
-mysql2 → MySQL driver for Node.js
-sequelize → ORM for MySQL
-dotenv → Loads environment variables
-http-status-codes → Standard HTTP response codes
-bcryptjs → Hashes passwords securely
-jsonwebtoken → Generates & verifies JWT tokens
-cookie-parser → Parses cookies in requests
-cors → Handles Cross-Origin Resource Sharing
-express-rate-limit → Limits repeated requests
+- **bcryptjs**  
+  → Used for hashing passwords during registration and comparing them during login.
 
+- **jsonwebtoken (JWT)**  
+  → Used to create and verify tokens for managing authenticated sessions.
 
-📌 Step 5: Create the Folder Structure
-mkdir config controllers models middleware routes utils errors
-touch server.js config/db.js .env routes/authRoutes.js models/UserModel.js controllers/authController.js middleware/validationMiddleware.js utils/tokenUtils.js utils/passwordUtils.js errors/customError.js
+- **HTTP-only cookies**  
+  → Tokens are stored in secure cookies to protect against client-side access.
 
+- **Prisma ORM**  
+  → Used to interact with the database for creating and fetching user records.
 
-📌 Step 6: Setup .env for Environment Variables
-Open .env and add your database credentials:
+- **Environment Variables (.env)**  
+  → Securely stores sensitive data like JWT secrets and expiration times.
 
-ini
-Copy
-Edit
-PORT=5000
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=teamup_db
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRES_IN=1d
-NODE_ENV=development
+- **Role-based Logic**  
+  → Automatically assigns `ADMIN` role to the first user, and `FREELANCER` to others.
 
+- **Validation Checks**  
+  → Confirms password matches during registration and verifies credentials during login.
 
-📌 Step 7: Setup Database Connection (config/db.js)
-Edit config/db.js and set up Sequelize:
+---
 
-javascript
-Copy
-Edit
-import { Sequelize } from "sequelize";
-import dotenv from "dotenv";
+### 🖥️ Frontend Technologies
 
-dotenv.config();
+- **React.js**  
+  React is the JavaScript library we use to build the user interface. It allows us to create reusable components for a structured and dynamic front end.
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    dialect: "mysql",
-    logging: false, // Set to true for debugging
-  }
-);
+- **Vite**  
+  A fast build tool that compiles and runs our React project efficiently during development.
 
-export default sequelize;
+- **Tailwind CSS**  
+  A utility-first CSS framework that speeds up styling using predefined classes.
 
-📌 Step 8: Setup User Model (models/UserModel.js)
-Edit models/UserModel.js:
+- **Font Awesome**  
+  A library used to add icons to the UI for a better visual experience.
 
-javascript
-Copy
-Edit
-import { DataTypes } from "sequelize";
-import sequelize from "../config/db.js";
+- **React Google Charts**  
+  Used for displaying data in visual formats like pie charts and task schedules, especially in the task management feature.
 
-const User = sequelize.define("User", {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  role: {
-    type: DataTypes.ENUM("admin", "user"),
-    defaultValue: "user",
-  },
-});
+- **React Mic**  
+  A React component for recording voice. We use this to allow users to send voice messages in group chats.
 
-export default User;
+---
 
+### ⚙️ Backend Technologies
 
-📌 Step 9: Setup Authentication Controller (controllers/authController.js)
-Edit controllers/authController.js:
+- **Node.js**  
+  A JavaScript runtime that allows us to run server-side JavaScript code.
 
-javascript
-Copy
-Edit
-import { StatusCodes } from "http-status-codes";
-import User from "../models/UserModel.js";
-import { comparePassword, hashPassword } from "../utils/passwordUtils.js";
-import { UnauthenticatedError } from "../errors/customError.js";
-import { createJWT } from "../utils/tokenUtils.js";
+- **Express.js**  
+  A backend framework for Node.js, used to build APIs and manage routes.
 
-export const register = async (req, res) => {
-  const isFirstAccount = (await User.count()) === 0;
-  req.body.role = isFirstAccount ? "admin" : "user";
+- **WebSockets**  
+  Enables real-time, two-way communication between client and server. Used for live chat features in both individual and group chats.
 
-  req.body.password = await hashPassword(req.body.password);
+---
 
-  const user = await User.create(req.body);
-  res.status(StatusCodes.CREATED).json({ msg: "User created" });
-};
+### 🗄️ Database & ORM
 
-export const login = async (req, res) => {
-  const user = await User.findOne({ where: { email: req.body.email } });
+- **MySQL**  
+  The relational database we use to store structured data like users, posts, messages, etc.
 
-  if (!user) throw new UnauthenticatedError("Invalid credentials");
+- **MySQL Workbench**  
+  A visual tool for managing and interacting with our MySQL database.
 
-  const isPasswordCorrect = await comparePassword(req.body.password, user.password);
+- **Prisma**  
+  An ORM (Object Relational Mapper) that lets us query and interact with the database using JavaScript instead of raw SQL.
 
-  if (!isPasswordCorrect) throw new UnauthenticatedError("Invalid credentials");
+---
 
-  const token = createJWT({ userId: user.id, role: user.role });
+### 🌐 Third-Party Services
 
-  res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production" });
-  res.status(StatusCodes.OK).json({ msg: "User logged in" });
-};
+- **Stripe (Test Mode)**  
+  Used to simulate and test payment features like purchasing post limits or other premium services.
 
-export const logout = (req, res) => {
-  res.cookie("token", "logout", { httpOnly: true, expires: new Date(0) });
-  res.status(StatusCodes.OK).json({ msg: "User logged out!" });
-};
-
-
-
-📌 Step 10: Setup Routes (routes/authRoutes.js)
-javascript
-Copy
-Edit
-import { Router } from "express";
-import { login, register, logout } from "../controllers/authController.js";
-import rateLimiter from "express-rate-limit";
-
-const router = Router();
-
-const apiLimiter = rateLimiter({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  message: { msg: "Too many requests, please try again later" },
-});
-
-router.post("/register", apiLimiter, register);
-router.post("/login", apiLimiter, login);
-router.get("/logout", logout);
-
-export default router;
-
-
-📌 Step 11: Setup the Server (server.js)
-javascript
-Copy
-Edit
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import authRoutes from "./routes/authRoutes.js";
-import sequelize from "./config/db.js";
-
-dotenv.config();
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-app.use(cookieParser());
-
-app.use("/api/auth", authRoutes);
-
-const startServer = async () => {
-  try {
-    await sequelize.sync({ alter: true }); // Sync database
-    app.listen(process.env.PORT, () => console.log(`Server running on port ${process.env.PORT}`));
-  } catch (error) {
-    console.error("Database connection failed:", error);
-  }
-};
-
-startServer();
-
-
+- **Cloudinary**  
+  A cloud-based service we use to upload and store images. Instead of saving image files, we store URLs returned by Cloudinary.

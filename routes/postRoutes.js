@@ -3,7 +3,12 @@ import {
   createPost,
   getAllPosts,
   getPostById,
-  getMyProjects
+  getMyProjects,
+  addLike,
+  removeLike,
+  addComment,
+  deleteComment
+  
 } from '../controllers/postController.js';
 import { authenticateUser } from '../middleware/errorHandlerMiddleware.js';
 import upload from '../middleware/multerMiddleware.js';
@@ -34,6 +39,17 @@ router.get('/all', getAllPosts);
 
 router.get('/my', authenticateUser, getMyProjects);
 
-router.get('/:id', getPostById);
+router.get('/:id', authenticateUser, getPostById);
+
+router.post('/comment', authenticateUser, addComment);
+
+router.delete('/comment/:id', authenticateUser, deleteComment);
+
+// Add a like (for STATUS posts)
+router.post('/like', authenticateUser, addLike);
+
+// Remove a like (for STATUS posts)
+router.delete('/like', authenticateUser, removeLike);
+
 
 export default router;

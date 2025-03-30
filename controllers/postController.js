@@ -129,12 +129,19 @@ export const getAllPosts = async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       include: {
-        user: true // or select certain fields: { select: { firstName: true, ... } }
+        user: true,
+        likes: true,
+        comments: {
+          include: {
+            user: true
+          }
+        } // ✅ this closing brace was missing
       },
       orderBy: {
         createdAt: 'desc'
       }
     });
+
     return successResponse(res, 'Posts retrieved successfully', posts);
   } catch (error) {
     console.error('Error fetching posts:', error);
@@ -184,5 +191,119 @@ export const getMyProjects = async (req, res) => {
   } catch (error) {
     console.error('Error fetching my projects:', error);
     return res.status(500).json({ error: 'Error fetching my projects' });
+  }
+};
+
+// Add a comment to a post (only for STATUS posts)
+export const addComment = async (req, res) => {
+  try {
+    const { postId, content } = req.body;
+    const userId = req.user.id || req.user.userId;
+
+    // Verify that the post exists and is a STATUS post.
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.postType !== 'STATUS') {
+      return res
+        .status(400)
+        .json({ error: 'Comments are only allowed on status posts.' });
+    }
+
+    const comment = await prisma.comment.create({
+      data: {
+        postId,
+        content,
+        userId
+      }
+    });
+    res.json(comment);
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    res.status(500).json({ error: 'Error creating comment' });
+  }
+};
+
+export const deleteComment = async (req, res) => {
+  try {
+    const commentId = req.params.id;
+    const userId = req.user.id || req.user.userId;
+
+    // Find the comment
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+    if (comment.userId !== userId) {
+      return res.status(403).json({ error: "You are not authorized to delete this comment." });
+    }
+
+    const deletedComment = await prisma.comment.delete({ where: { id: commentId } });
+    return res.json(deletedComment);
+  } catch (error) {
+    console.error("Error deleting comment:", error);
+    return res.status(500).json({ error: "Error deleting comment" });
+  }
+};
+
+
+// Add a like (only for STATUS posts)
+export const addLike = async (req, res) => {
+  try {
+    const { postId } = req.body;
+    const userId = req.user.id || req.user.userId;
+
+    // Verify that the post exists and is a STATUS post.
+    const post = await prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.postType !== 'STATUS') {
+      return res
+        .status(400)
+        .json({ error: 'Likes are only allowed on status posts.' });
+    }
+
+    // Check if the user already liked this post.
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        postId_userId: {
+          postId,
+          userId
+        }
+      }
+    });
+    if (existingLike) {
+      return res
+        .status(400)
+        .json({ error: 'You have already liked this post.' });
+    }
+
+    const like = await prisma.like.create({
+      data: {
+        postId,
+        userId
+      }
+    });
+    res.json(like);
+  } catch (error) {
+    console.error('Error adding like:', error);
+    res.status(500).json({ error: 'Error adding like' });
+  }
+};
+
+// Remove a like (toggle off) remains unchanged:
+export const removeLike = async (req, res) => {
+  try {
+    const { postId } = req.body;
+    const userId = req.user.id || req.user.userId;
+    const like = await prisma.like.findUnique({
+      where: { postId_userId: { postId, userId } }
+    });
+    if (!like) {
+      return res.status(400).json({ error: 'Like not found.' });
+    }
+    const deletedLike = await prisma.like.delete({
+      where: { id: like.id }
+    });
+    res.json(deletedLike);
+  } catch (error) {
+    console.error('Error removing like:', error);
+    res.status(500).json({ error: 'Error removing like' });
   }
 };
