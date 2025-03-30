@@ -46,7 +46,7 @@ function SignInPage() {
         console.log('Extracted Token:', token);
 
         if (token) {
-          // Store token in localStorage
+          // Store token in localStorage and update local state if needed
           localStorage.setItem('token', token);
 
           // Decode token to get userId
@@ -57,8 +57,11 @@ function SignInPage() {
             autoClose: 2000
           });
 
-          // Navigate to the dynamic profile route
-          setTimeout(() => navigate(`/profile/${userId}`), 2000);
+          // After a short delay, navigate to home and reload the page to update all data.
+          setTimeout(() => {
+            navigate('/');
+            window.location.reload();
+          }, 2000);
         } else {
           throw new Error('No token received from server');
         }

@@ -52,9 +52,7 @@ const ChatList = ({ onSelectChat }) => {
   // property of the last message in chat.messages.
   const getLastActivityTime = chat => {
     if (chat.messages && chat.messages.length > 0) {
-      return new Date(
-        chat.messages[chat.messages.length - 1].createdAt
-      ).getTime();
+      return new Date(chat.messages[chat.messages.length - 1].createdAt).getTime();
     }
     return 0;
   };

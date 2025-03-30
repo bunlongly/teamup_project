@@ -461,20 +461,6 @@ function Profile() {
         {/* RIGHT COLUMN */}
         <div className='col-span-12 md:col-span-4 space-y-4'>
           <div className='bg-white rounded-lg shadow p-4'>
-            <h3 className='text-lg font-semibold mb-2'>Profile URL</h3>
-            <p className='text-sm text-gray-500'>
-              Your public profile can be accessed at:
-            </p>
-            <a
-              href={`https://yourdomain.com/profile/${personalInfo.username}`}
-              target='_blank'
-              rel='noopener noreferrer'
-              className='text-blue-500 hover:underline'
-            >
-              https://yourdomain.com/profile/{personalInfo.username}
-            </a>
-          </div>
-          <div className='bg-white rounded-lg shadow p-4'>
             <SocialLinksSection
               socialLinks={socialLinks}
               setSocialLinks={newLinks => setSocialLinks(newLinks)}

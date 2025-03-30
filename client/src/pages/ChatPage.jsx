@@ -7,13 +7,18 @@ import space from '../assets/css/space.jpeg';
 import program from '../assets/css/program.jpeg';
 import bear from '../assets/css/bear.jpeg';
 
+// Import icons from react-icons
+import { FaBars, FaInfoCircle, FaTimes } from 'react-icons/fa';
+
 const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [chatBackground, setChatBackground] = useState(''); // default background
-  // Default chatColor is blue (#0046b0) but you can choose other colors, including black.
-  const [chatColor, setChatColor] = useState('#0046b0');
+  const [chatColor, setChatColor] = useState('#0046b0'); // default text color
 
-  // Load stored background and color for the selected chat
+  // For mobile overlays
+  const [showChatList, setShowChatList] = useState(false);
+  const [showChatDetails, setShowChatDetails] = useState(false);
+
   useEffect(() => {
     if (selectedChat && selectedChat.id) {
       const storedBg = localStorage.getItem(
@@ -25,7 +30,6 @@ const ChatPage = () => {
     }
   }, [selectedChat]);
 
-  // Set and persist background image for the selected chat
   const handleSetBackground = bg => {
     setChatBackground(bg);
     if (selectedChat && selectedChat.id) {
@@ -33,7 +37,6 @@ const ChatPage = () => {
     }
   };
 
-  // Set and persist text color for the selected chat
   const handleSetChatColor = color => {
     setChatColor(color);
     if (selectedChat && selectedChat.id) {
@@ -41,13 +44,14 @@ const ChatPage = () => {
     }
   };
 
-  // Inline RightColumn component displaying real data
+  // Inline RightColumn component for chat details
   const RightColumn = ({
     chat,
     chatBackground,
     setChatBackground,
     chatColor,
-    setChatColor
+    setChatColor,
+    onClose // callback for mobile overlay close
   }) => {
     if (!chat) {
       return (
@@ -57,6 +61,18 @@ const ChatPage = () => {
     const participants = chat.participants || [];
     return (
       <div className='p-4 h-full flex flex-col'>
+        {/* Close button for mobile overlay (only show if onClose exists) */}
+        {onClose && (
+          <div className='mb-4 flex justify-end md:hidden'>
+            <button
+              onClick={onClose}
+              className='text-blue-500 hover:text-blue-600 transition-colors cursor-pointer'
+            >
+              Back to Chat
+            </button>
+          </div>
+        )}
+
         {/* Chat Info */}
         <div className='border-b pb-4 mb-4'>
           <h2 className='text-xl font-bold mb-1'>
@@ -97,7 +113,7 @@ const ChatPage = () => {
         {/* Change Background */}
         <div className='border-b pb-4 mb-4'>
           <h3 className='text-md font-semibold mb-1'>Change Background</h3>
-          <div className='flex space-x-2'>
+          <div className='flex flex-wrap gap-2'>
             <button
               onClick={() => setChatBackground('/images/default.jpg')}
               className={`px-3 py-1 rounded ${
@@ -141,10 +157,10 @@ const ChatPage = () => {
           </div>
         </div>
 
-        {/* Change Color */}
+        {/* Change Text Color */}
         <div className='border-b pb-4 mb-4'>
           <h3 className='text-md font-semibold mb-1'>Change Text Color</h3>
-          <div className='flex space-x-2'>
+          <div className='flex flex-wrap gap-2'>
             <button
               onClick={() => setChatColor('#0046b0')}
               className={`px-3 py-1 rounded ${
@@ -198,7 +214,6 @@ const ChatPage = () => {
     );
   };
 
-  // Add prop types for RightColumn to validate chat.participants and others
   RightColumn.propTypes = {
     chat: PropTypes.shape({
       isGroup: PropTypes.bool,
@@ -220,32 +235,123 @@ const ChatPage = () => {
     chatBackground: PropTypes.string.isRequired,
     setChatBackground: PropTypes.func.isRequired,
     chatColor: PropTypes.string.isRequired,
-    setChatColor: PropTypes.func.isRequired
+    setChatColor: PropTypes.func.isRequired,
+    onClose: PropTypes.func
   };
 
   return (
-    <div className='flex h-screen'>
-      {/* Left Column */}
-      <div className='w-1/4 bg-white border-r overflow-y-auto'>
-        <ChatList onSelectChat={setSelectedChat} />
+    <div className='h-screen bg-gray-50 relative'>
+      {/* For larger screens (md+), show all three columns in one row */}
+      <div className='hidden md:flex max-w-7xl mx-auto h-full'>
+        {/* Left Column: Chat List */}
+        <div className='w-1/4 bg-white border-r overflow-y-auto'>
+          <ChatList onSelectChat={setSelectedChat} />
+        </div>
+
+        {/* Middle Column: Chat Window */}
+        <div className='w-1/2 flex flex-col overflow-hidden'>
+          <ChatWindow
+            chat={selectedChat}
+            backgroundUrl={chatBackground}
+            headerColor={chatColor}
+          />
+        </div>
+
+        {/* Right Column: Chat Details */}
+        <div className='w-1/4 bg-white border-l overflow-y-auto'>
+          <RightColumn
+            chat={selectedChat}
+            chatBackground={chatBackground}
+            setChatBackground={handleSetBackground}
+            chatColor={chatColor}
+            setChatColor={handleSetChatColor}
+          />
+        </div>
       </div>
-      {/* Middle Column */}
-      <div className='flex-1 flex flex-col overflow-hidden'>
-        <ChatWindow
-          chat={selectedChat}
-          backgroundUrl={chatBackground}
-          headerColor={chatColor}
-        />
+
+      {/* For mobile screens, show ChatWindow with a top navbar containing toggle icons */}
+      <div className='md:hidden flex flex-col h-full'>
+        {/* Top Navbar for mobile */}
+        <div className='bg-blue-600 text-white flex items-center justify-between px-4 py-3'>
+          <button
+            onClick={() => setShowChatList(true)}
+            className='p-2 rounded hover:bg-blue-700 transition-colors'
+          >
+            <FaBars className='w-5 h-5' />
+          </button>
+          <h2 className='text-lg font-bold'>Chat</h2>
+          <button
+            onClick={() => setShowChatDetails(true)}
+            className='p-2 rounded hover:bg-blue-700 transition-colors'
+          >
+            <FaInfoCircle className='w-5 h-5' />
+          </button>
+        </div>
+
+        {/* The ChatWindow filling the rest of the screen */}
+        <div className='flex-1 overflow-hidden'>
+          <ChatWindow
+            chat={selectedChat}
+            backgroundUrl={chatBackground}
+            headerColor={chatColor}
+          />
+        </div>
       </div>
-      {/* Right Column */}
-      <div className='w-1/4 bg-white border-l overflow-y-auto'>
-        <RightColumn
-          chat={selectedChat}
-          chatBackground={chatBackground}
-          setChatBackground={handleSetBackground}
-          chatColor={chatColor}
-          setChatColor={handleSetChatColor}
-        />
+
+      {/* Mobile Overlay for Chat List */}
+      <div
+        className={`absolute inset-0 z-50 bg-white transition-all duration-300 ease-in-out ${
+          showChatList
+            ? 'opacity-100 translate-x-0 pointer-events-auto'
+            : 'opacity-0 translate-x-full pointer-events-none'
+        }`}
+      >
+        <div className='p-4 flex justify-between items-center border-b'>
+          <h2 className='text-xl font-bold'>Select a chat</h2>
+          <button
+            onClick={() => setShowChatList(false)}
+            className='text-gray-600 hover:text-gray-800 transition-colors'
+          >
+            <FaTimes className='w-6 h-6' />
+          </button>
+        </div>
+        <div className='h-full overflow-y-auto'>
+          <ChatList
+            onSelectChat={chat => {
+              setSelectedChat(chat);
+              setShowChatList(false);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Mobile Overlay for Chat Details */}
+      <div
+        className={`absolute inset-0 z-50 bg-white transition-all duration-300 ease-in-out ${
+          showChatDetails
+            ? 'opacity-100 translate-x-0 pointer-events-auto'
+            : 'opacity-0 translate-x-full pointer-events-none'
+        }`}
+      >
+        <div className='p-4 flex justify-between items-center border-b'>
+          <h2 className='text-xl font-bold'>Chat Details</h2>
+          <button
+            onClick={() => setShowChatDetails(false)}
+            className='text-gray-600 hover:text-gray-800 transition-colors'
+          >
+            <FaTimes className='w-6 h-6' />
+          </button>
+        </div>
+        <div className='h-full overflow-y-auto'>
+          <RightColumn
+            chat={selectedChat}
+            chatBackground={chatBackground}
+            setChatBackground={handleSetBackground}
+            chatColor={chatColor}
+            setChatColor={handleSetChatColor}
+            onClose={() => setShowChatDetails(false)}
+          />
+        </div>
       </div>
     </div>
   );

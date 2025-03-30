@@ -5,18 +5,15 @@ import { useNavigate } from 'react-router-dom';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 
 function MyCandidatesPage() {
-  // viewMode: "Applicants" (for owners) or "My Applications" (for candidates)
   const [viewMode, setViewMode] = useState('Applicants');
   const [applications, setApplications] = useState([]);
   const [filteredApps, setFilteredApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterText, setFilterText] = useState('');
-  // statusFilter controlled by tabs: "All", "PENDING", "APPROVED", "REJECTED"
   const [statusFilter, setStatusFilter] = useState('All');
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  // Fetch applications based on viewMode
   useEffect(() => {
     const fetchApplications = async () => {
       setLoading(true);
@@ -39,11 +36,9 @@ function MyCandidatesPage() {
     fetchApplications();
   }, [token, viewMode]);
 
-  // Update filtered applications when filterText or statusFilter changes.
   useEffect(() => {
     const lowerFilter = filterText.toLowerCase();
     const filtered = applications.filter(app => {
-      // For both views, we'll filter by the candidate's name/job title.
       const { applicant, status } = app;
       const fullName =
         `${applicant.firstName} ${applicant.lastName}`.toLowerCase();
@@ -59,7 +54,6 @@ function MyCandidatesPage() {
     setFilteredApps(filtered);
   }, [filterText, statusFilter, applications]);
 
-  // For owner view, group applications by postId.
   const grouped =
     viewMode === 'Applicants'
       ? filteredApps.reduce((acc, app) => {
@@ -68,7 +62,7 @@ function MyCandidatesPage() {
           acc[postId].push(app);
           return acc;
         }, {})
-      : null; // For "My Applications", we display a flat list
+      : null;
 
   const handleUpdateStatus = async (applicationId, newStatus) => {
     try {
@@ -78,10 +72,8 @@ function MyCandidatesPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (newStatus === 'APPROVED') {
-        // Remove the application from the list if approved
         setApplications(prev => prev.filter(app => app.id !== applicationId));
       } else {
-        // Otherwise, update its status
         setApplications(prev =>
           prev.map(app =>
             app.id === applicationId ? { ...app, status: newStatus } : app
@@ -122,11 +114,56 @@ function MyCandidatesPage() {
         </ul>
       </div>
 
-      {/* Filter Panel (Always on the Right) */}
-      <div className='grid grid-cols-1 md:grid-cols-12 gap-6'>
-        <div className='md:col-span-8'>
+      {/* Filter Panel - Shown above content on mobile/tablet */}
+      <div className='lg:hidden mb-6'>
+        <div className='bg-white rounded-md shadow p-4'>
+          <h2 className='text-xl font-semibold text-gray-800 mb-4'>
+            Filter {viewMode === 'Applicants' ? 'Candidates' : 'Applications'}
+          </h2>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700'>
+              Search by Name or Job Title
+            </label>
+            <input
+              type='text'
+              value={filterText}
+              onChange={e => setFilterText(e.target.value)}
+              className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+              placeholder='Enter name or job title'
+            />
+          </div>
+          <div className='mb-4'>
+            <label className='block text-sm font-medium text-gray-700'>
+              Application Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+            >
+              <option value='All'>All</option>
+              <option value='PENDING'>Pending</option>
+              <option value='APPROVED'>Approved</option>
+              <option value='REJECTED'>Rejected</option>
+            </select>
+          </div>
+          <button
+            onClick={() => {
+              setFilterText('');
+              setStatusFilter('All');
+            }}
+            className='w-full mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors'
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className='flex flex-col lg:flex-row gap-6'>
+        {/* Applications List - Takes full width on mobile, 2/3 on desktop */}
+        <div className='w-full lg:w-8/12'>
           {viewMode === 'Applicants' ? (
-            // Owner view: Group applications by project
             Object.keys(grouped).length === 0 ? (
               <p className='p-4'>No candidates match your filters.</p>
             ) : (
@@ -227,7 +264,6 @@ function MyCandidatesPage() {
               })
             )
           ) : (
-            // Candidate view: My Applications (flat list)
             <div className='space-y-8'>
               <TransitionGroup>
                 {filteredApps.map(app => {
@@ -289,11 +325,11 @@ function MyCandidatesPage() {
           )}
         </div>
 
-        {/* Right Column: Filter Panel */}
-        <div className='md:col-span-4 mt-8'>
-          <div className='bg-white rounded-md shadow p-4 mb-6'>
+        {/* Filter Panel - Hidden on mobile, shown on desktop */}
+        <div className='hidden lg:block lg:w-4/12'>
+          <div className='bg-white rounded-md shadow p-4 sticky top-4'>
             <h2 className='text-xl font-semibold text-gray-800 mb-4'>
-              Filter Candidates
+              Filter {viewMode === 'Applicants' ? 'Candidates' : 'Applications'}
             </h2>
             <div className='mb-4'>
               <label className='block text-sm font-medium text-gray-700'>
@@ -324,11 +360,12 @@ function MyCandidatesPage() {
             </div>
             <button
               onClick={() => {
-                // Filtering is handled automatically via useEffect
+                setFilterText('');
+                setStatusFilter('All');
               }}
-              className='w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'
+              className='w-full mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors'
             >
-              Apply Filter
+              Clear Filters
             </button>
           </div>
         </div>

@@ -4,8 +4,6 @@ import fallbackLogo from '../assets/logo.png';
 import { useNavigate } from 'react-router-dom';
 
 function MyProjects() {
-  // "My Projects" shows projects you own;
-  // "Enrolled Projects" shows projects where your application is approved.
   const [activeTab, setActiveTab] = useState('My Projects');
   const [myProjects, setMyProjects] = useState([]);
   const [enrolledProjects, setEnrolledProjects] = useState([]);
@@ -14,7 +12,6 @@ function MyProjects() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  // Fetch owner's projects from /api/post/my.
   const fetchMyProjects = async () => {
     try {
       const response = await axios.get('http://localhost:5200/api/post/my', {
@@ -26,7 +23,6 @@ function MyProjects() {
     }
   };
 
-  // Fetch candidate applications from /api/application/my and filter for approved ones.
   const fetchEnrolledProjects = async () => {
     try {
       const response = await axios.get(
@@ -35,11 +31,9 @@ function MyProjects() {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-      // Filter to only approved applications.
       const approvedApps = response.data.data.filter(
         app => app.status === 'APPROVED'
       );
-      // Group by postId in case multiple approved applications exist for the same project.
       const grouped = approvedApps.reduce((acc, app) => {
         const { postId } = app;
         if (!acc[postId]) {
@@ -54,7 +48,6 @@ function MyProjects() {
     }
   };
 
-  // Fetch data when the active tab changes.
   useEffect(() => {
     setLoading(true);
     if (activeTab === 'My Projects') {
@@ -64,7 +57,6 @@ function MyProjects() {
     }
   }, [activeTab, token]);
 
-  // Filter the projects based on filterText.
   const filteredMyProjects = myProjects.filter(project => {
     const name = project.projectName || '';
     const desc = project.projectDescription || '';
@@ -97,7 +89,7 @@ function MyProjects() {
                 setActiveTab(tab);
                 setFilterText('');
               }}
-              className={`cursor-pointer pb-2 transition-all duration-300  ${
+              className={`cursor-pointer pb-2 transition-all duration-300 ${
                 activeTab === tab
                   ? 'border-b-2 border-blue-500 font-semibold text-gray-800'
                   : 'text-gray-500 hover:border-b-2 hover:border-blue-300'
@@ -109,10 +101,35 @@ function MyProjects() {
         </ul>
       </div>
 
-      {/* Main Content with Filter Panel */}
-      <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
-        {/* Left Column: Projects Grid */}
-        <div className='lg:col-span-8'>
+      {/* Filter Panel - Now appears above projects on medium screens and below */}
+      <div className='lg:hidden mb-6'>
+        <div className='bg-white rounded-lg shadow-lg p-4 sm:p-6'>
+          <h2 className='text-xl font-bold text-gray-800 mb-4'>
+            Filter Projects
+          </h2>
+          <label className='block text-sm font-medium text-gray-700'>
+            Search by Name or Description
+          </label>
+          <input
+            type='text'
+            value={filterText}
+            onChange={e => setFilterText(e.target.value)}
+            placeholder='Enter search text'
+            className='mt-1 block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
+          />
+          <button
+            onClick={() => setFilterText('')}
+            className='mt-4 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors'
+          >
+            Clear Filter
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className='flex flex-col lg:flex-row gap-6'>
+        {/* Projects Grid - Takes full width on mobile, 2/3 on desktop */}
+        <div className='w-full lg:w-8/12'>
           {activeTab === 'My Projects' ? (
             filteredMyProjects.length === 0 ? (
               <p className='p-4'>No projects match your filter.</p>
@@ -179,9 +196,9 @@ function MyProjects() {
           )}
         </div>
 
-        {/* Right Column: Filter Panel */}
-        <div className='lg:col-span-4'>
-          <div className='bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6'>
+        {/* Filter Panel - Hidden on mobile, appears on the side on desktop */}
+        <div className='hidden lg:block lg:w-4/12'>
+          <div className='bg-white rounded-lg shadow-lg p-4 sm:p-6 sticky top-4'>
             <h2 className='text-xl font-bold text-gray-800 mb-4'>
               Filter Projects
             </h2>
