@@ -49,7 +49,7 @@ function HomePage() {
   return (
     <div className='container mx-auto px-4 py-6'>
       {/* Sticky Create Post Button */}
-      <div className='sticky top-0 z-50 bg-white p-4 shadow mb-12'>
+      <div className='sticky top-16 z-40 bg-white p-4 shadow mb-12'>
         <button
           onClick={() => navigate('/projects/create')}
           className='w-full p-3 bg-blue-600 text-white rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors'
@@ -60,7 +60,7 @@ function HomePage() {
 
       <div className='grid grid-cols-12 gap-6'>
         {/* Main Feed */}
-        <div className="col-span-12 lg:col-span-8 space-y-4">
+        <div className='col-span-12 lg:col-span-8 space-y-4'>
           {statusPosts.length === 0 ? (
             <p className='text-gray-500'>No status posts to display.</p>
           ) : (
