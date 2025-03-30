@@ -1,4 +1,3 @@
-// NavBar.jsx
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -13,7 +12,8 @@ import {
   faRightFromBracket,
   faComments,
   faSearch,
-  faTimes
+  faTimes,
+  faBars
 } from '@fortawesome/free-solid-svg-icons';
 import { jwtDecode } from 'jwt-decode';
 import axios from 'axios';
@@ -33,6 +33,9 @@ function NavBar() {
   const [searchExpanded, setSearchExpanded] = useState(false);
   const searchContainerRef = useRef(null);
   const searchInputRef = useRef(null);
+
+  // Mobile menu state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Decode token to get userId and store it in state/localStorage
   useEffect(() => {
@@ -89,21 +92,15 @@ function NavBar() {
 
   // Focus the input when search expands
   useEffect(() => {
-    if (searchExpanded && searchInputRef.current) {
-      console.log('Search expanded: focusing input.');
+    if ((searchExpanded || mobileMenuOpen) && searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, [searchExpanded]);
+  }, [searchExpanded, mobileMenuOpen]);
 
   // Debounced search effect
   useEffect(() => {
-    console.log(
-      'Debounced search effect triggered. Current searchTerm:',
-      searchTerm
-    );
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim()) {
-        console.log('Performing search for:', searchTerm);
         axios
           .get(
             `http://localhost:5200/api/user/search?search=${encodeURIComponent(
@@ -112,7 +109,6 @@ function NavBar() {
             { headers: { Authorization: `Bearer ${token}` } }
           )
           .then(res => {
-            console.log('Search results received:', res.data.data);
             setSearchResults(res.data.data);
           })
           .catch(error => {
@@ -126,14 +122,13 @@ function NavBar() {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, token]);
 
-  // Outside click: collapse search if click is outside search container
+  // Collapse search when clicking outside its container
   useEffect(() => {
     const handleClickOutside = event => {
       if (
         searchContainerRef.current &&
         !searchContainerRef.current.contains(event.target)
       ) {
-        console.log('Clicked outside search container. Collapsing search.');
         setSearchExpanded(false);
         setSearchTerm('');
         setSearchResults([]);
@@ -144,33 +139,41 @@ function NavBar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Toggle search expansion/collapse
+  // Toggle search expansion
   const toggleSearch = () => {
     setSearchExpanded(prev => {
       const newState = !prev;
-      console.log('Toggling search. New expanded state:', newState);
       if (!newState) {
         setSearchTerm('');
         setSearchResults([]);
       }
       return newState;
     });
+    setMobileMenuOpen(false);
   };
 
-  // When a search result is clicked
+  // Toggle mobile menu
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(prev => !prev);
+    if (!mobileMenuOpen) {
+      setSearchExpanded(false);
+    }
+  };
+
+  // Handle search result click
   const handleResultClick = user => {
-    console.log('Result clicked:', user);
     navigate(`/profile/${user.id}`);
     setSearchTerm('');
     setSearchResults([]);
     setSearchExpanded(false);
+    setMobileMenuOpen(false);
   };
 
   return (
     <>
       {showNavBar && (
         <nav
-          className='navBar'
+          className='navBar  w-full z-50'
           style={{
             backgroundColor: '#0046b0',
             fontFamily: 'Poppins',
@@ -178,43 +181,67 @@ function NavBar() {
             fontSize: 14
           }}
         >
-          <div className='container mx-auto px-4 py-2 flex justify-between items-center relative'>
-            <div className='flex items-center space-x-4'>
-              <div className='flex flex-col items-start'>
+          <div className='container mx-auto px-4 py-2 flex justify-between items-center'>
+            {/* Left section: Logo + Search */}
+            <div className='flex items-center space-x-2 sm:space-x-4'>
+              <div className='hidden sm:flex flex-col items-start'>
                 <Khteamup khColor='#21ADEA' khFont={20} />
                 <Slogan />
               </div>
-              {/* Search container */}
+              {/* Mobile Logo (shown only on small screens) */}
+              <div className='sm:hidden'>
+                <Khteamup khColor='#21ADEA' khFont={18} />
+              </div>
+
+              {/* Search container - Desktop */}
               <div
-                className='relative flex items-center'
+                className='relative hidden lg:flex items-center'
                 ref={searchContainerRef}
               >
-                {/* Input wrapper with animated width (no overflow-hidden on the whole container) */}
                 <div
-                  className='overflow-hidden transition-all duration-300 ease-in-out'
-                  style={{ width: searchExpanded ? '20rem' : '0rem' }}
+                  className='overflow-hidden transition-all duration-300 ease-in-out flex items-center'
+                  style={{
+                    width: searchExpanded
+                      ? window.innerWidth < 640
+                        ? '12rem'
+                        : '20rem'
+                      : '0rem'
+                  }}
                 >
                   <input
                     ref={searchInputRef}
                     type='text'
                     value={searchTerm}
-                    onChange={e => {
-                      console.log('Input changed:', e.target.value);
-                      setSearchTerm(e.target.value);
-                    }}
+                    onChange={e => setSearchTerm(e.target.value)}
                     placeholder='Search for users...'
-                    className='bg-white rounded-full border border-gray-200 text-base text-gray-900 w-full px-3 py-1.5 transition-all duration-300 ease-in-out focus:border-[#0046b0] focus:ring-2 focus:ring-[#0046b0]'
+                    className='bg-white rounded-l-full border border-gray-200 text-base text-gray-900 w-full px-3 py-1.5 focus:border-[#0046b0] focus:ring-2 focus:ring-[#0046b0]'
                   />
+                  {/* Add Cancel button next to search input when expanded */}
+                  {searchExpanded && (
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setSearchResults([]);
+                        setSearchExpanded(false);
+                      }}
+                      className='bg-white rounded-r-full border border-l-0 border-gray-200 px-3 py-1.5 text-gray-500 hover:text-gray-700'
+                    >
+                      <FontAwesomeIcon icon={faTimes} />
+                    </button>
+                  )}
                 </div>
+                {/* Toggle search button (magnifying glass) */}
                 <button
                   onClick={toggleSearch}
                   className='ml-2 focus:outline-none'
+                  aria-label={searchExpanded ? 'Close search' : 'Open search'}
                 >
                   <FontAwesomeIcon
                     icon={searchExpanded ? faTimes : faSearch}
-                    className='text-white text-2xl'
+                    className='text-white text-xl sm:text-2xl'
                   />
                 </button>
+
                 {/* Dropdown for search results */}
                 {searchResults.length > 0 && searchExpanded && (
                   <ul className='absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-md z-50 max-h-60 overflow-y-auto'>
@@ -231,7 +258,7 @@ function NavBar() {
                             className='w-8 h-8 rounded-full mr-2 object-cover'
                           />
                         )}
-                        <span>
+                        <span className='truncate'>
                           {user.firstName} {user.lastName} ({user.username})
                         </span>
                       </li>
@@ -240,106 +267,349 @@ function NavBar() {
                 )}
               </div>
             </div>
-            <div className='flex items-center space-x-4'>
+
+            {/* Desktop Nav Links (hidden below 1024px) */}
+            <div className='hidden lg:flex items-center space-x-3 sm:space-x-4'>
               <NavLink
                 to='/'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faHome} />
-                <span>Home</span>
+                <FontAwesomeIcon icon={faHome} className='text-lg' />
+                <span className='text-xs mt-1'>Home</span>
               </NavLink>
               <NavLink
                 to='/network'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faGlobe} />
-                <span>Network</span>
+                <FontAwesomeIcon icon={faGlobe} className='text-lg' />
+                <span className='text-xs mt-1'>Network</span>
               </NavLink>
               <NavLink
                 to='/projects'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faCalendar} />
-                <span>Projects</span>
+                <FontAwesomeIcon icon={faCalendar} className='text-lg' />
+                <span className='text-xs mt-1'>Projects</span>
               </NavLink>
               <NavLink
                 to='/my-projects'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faFile} />
-                <span>My Projects</span>
+                <FontAwesomeIcon icon={faFile} className='text-lg' />
+                <span className='text-xs mt-1'>My Projects</span>
               </NavLink>
               <NavLink
                 to='/notifications'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faBell} />
-                <span>Notifications</span>
+                <FontAwesomeIcon icon={faBell} className='text-lg' />
+                <span className='text-xs mt-1'>Notifications</span>
               </NavLink>
               <NavLink
                 to='/candidates'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faRepeat} />
-                <span>Candidates</span>
+                <FontAwesomeIcon icon={faRepeat} className='text-lg' />
+                <span className='text-xs mt-1'>Candidates</span>
               </NavLink>
               <NavLink
                 to={`/profile/${userId}`}
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faUser} />
-                <span>Profile</span>
+                <FontAwesomeIcon icon={faUser} className='text-lg' />
+                <span className='text-xs mt-1'>Profile</span>
               </NavLink>
               <NavLink
                 to='/chat'
                 className={({ isActive }) =>
-                  isActive
-                    ? 'text-[#21ADEA] flex flex-col items-center'
-                    : 'text-white flex flex-col items-center'
+                  `flex flex-col items-center p-2 ${
+                    isActive
+                      ? 'text-[#21ADEA]'
+                      : 'text-white hover:text-[#21ADEA]'
+                  } transition-colors`
                 }
               >
-                <FontAwesomeIcon icon={faComments} />
-                <span>Chat</span>
+                <FontAwesomeIcon icon={faComments} className='text-lg' />
+                <span className='text-xs mt-1'>Chat</span>
               </NavLink>
               <button
                 onClick={handleLogout}
-                className='text-white flex flex-col items-center hover:text-[#21ADEA]'
+                className='flex flex-col items-center p-2 text-white hover:text-[#21ADEA] transition-colors'
               >
-                <FontAwesomeIcon icon={faRightFromBracket} />
-                <span>Log out</span>
+                <FontAwesomeIcon
+                  icon={faRightFromBracket}
+                  className='text-lg'
+                />
+                <span className='text-xs mt-1'>Log out</span>
               </button>
+            </div>
+
+            {/* Mobile Menu Toggle (below 1024px) */}
+            <div className='lg:hidden flex items-center'>
+              <button
+                onClick={toggleMobileMenu}
+                className='text-white text-2xl focus:outline-none p-2'
+                aria-label='Menu'
+              >
+                <FontAwesomeIcon icon={mobileMenuOpen ? faTimes : faBars} />
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Nav Overlay */}
+          <div
+            className={`lg:hidden fixed inset-0 bg-[#0046b0] transform transition-transform duration-300 ease-in-out z-40 pt-16 overflow-y-auto ${
+              mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
+            }`}
+          >
+            <div className='container mx-auto px-4 py-4'>
+              {/* Search in mobile menu */}
+              <div className='relative mb-6 bg-white rounded-full px-4 py-2 flex items-center'>
+                <FontAwesomeIcon
+                  icon={faSearch}
+                  className='text-gray-500 mr-2'
+                />
+                <input
+                  type='text'
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder='Search for users...'
+                  className='flex-1 bg-transparent text-gray-900 focus:outline-none'
+                  ref={searchInputRef}
+                />
+                {searchTerm && (
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSearchResults([]);
+                    }}
+                    className='text-gray-500 ml-2'
+                  >
+                    <FontAwesomeIcon icon={faTimes} />
+                  </button>
+                )}
+              </div>
+
+              {/* Conditionally show search results or menu items */}
+              {searchResults.length > 0 ? (
+                <div className='bg-white rounded-lg shadow-md p-2 max-h-60 overflow-y-auto'>
+                  {searchResults.map(user => (
+                    <div
+                      key={user.id}
+                      onClick={() => handleResultClick(user)}
+                      className='flex items-center cursor-pointer p-2 hover:bg-blue-50 rounded'
+                    >
+                      {user.imageUrl && (
+                        <img
+                          src={user.imageUrl}
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className='w-8 h-8 rounded-full mr-2 object-cover'
+                        />
+                      )}
+                      <span className='truncate'>
+                        {user.firstName} {user.lastName} ({user.username})
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  {/* Regular menu items when not searching */}
+                  <NavLink
+                    to='/'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faHome} className='mr-3 text-lg' />
+                    <span className='text-base'>Home</span>
+                  </NavLink>
+                  <NavLink
+                    to='/network'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faGlobe} className='mr-3 text-lg' />
+                    <span className='text-base'>Network</span>
+                  </NavLink>
+                  <NavLink
+                    to='/projects'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon
+                      icon={faCalendar}
+                      className='mr-3 text-lg'
+                    />
+                    <span className='text-base'>Projects</span>
+                  </NavLink>
+                  <NavLink
+                    to='/my-projects'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faFile} className='mr-3 text-lg' />
+                    <span className='text-base'>My Projects</span>
+                  </NavLink>
+                  <NavLink
+                    to='/notifications'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faBell} className='mr-3 text-lg' />
+                    <span className='text-base'>Notifications</span>
+                  </NavLink>
+                  <NavLink
+                    to='/candidates'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faRepeat} className='mr-3 text-lg' />
+                    <span className='text-base'>Candidates</span>
+                  </NavLink>
+                  <NavLink
+                    to={`/profile/${userId}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon icon={faUser} className='mr-3 text-lg' />
+                    <span className='text-base'>Profile</span>
+                  </NavLink>
+                  <NavLink
+                    to='/chat'
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center p-3 rounded-lg ${
+                        isActive
+                          ? 'bg-[#003a8c] text-white'
+                          : 'text-white hover:bg-[#003a8c]'
+                      } transition-colors`
+                    }
+                  >
+                    <FontAwesomeIcon
+                      icon={faComments}
+                      className='mr-3 text-lg'
+                    />
+                    <span className='text-base'>Chat</span>
+                  </NavLink>
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className='flex items-center p-3 rounded-lg text-white hover:bg-[#003a8c] transition-colors text-left w-full'
+                  >
+                    <FontAwesomeIcon
+                      icon={faRightFromBracket}
+                      className='mr-3 text-lg'
+                    />
+                    <span className='text-base'>Log out</span>
+                  </button>
+                </>
+              )}
+
+              {/* App Info in Mobile Menu - only shown when not showing search results */}
+              {searchResults.length === 0 && (
+                <div className='mt-8 pt-4 border-t border-[#003a8c]'>
+                  <div className='flex flex-col items-center'>
+                    <Khteamup khColor='#21ADEA' khFont={20} />
+                    <Slogan />
+                    <p className='text-white text-xs mt-2 text-center opacity-75'>
+                      © {new Date().getFullYear()} KH TeamUp. All rights
+                      reserved.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </nav>
       )}
+      {/* Add padding to content when navbar is fixed */}
+      {showNavBar && <div className='pt-16'></div>}
       <ToastContainer position='top-right' autoClose={3000} />
     </>
   );
