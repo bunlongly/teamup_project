@@ -153,11 +153,35 @@ function Projects() {
       </div>
 
       <div className='grid grid-cols-12 gap-6'>
-        {/* RIGHT COLUMN: Filter Panel - Now comes first in DOM for mobile */}
+        {/* LEFT COLUMN: Project Feed - Always comes first in DOM */}
+        <div className='col-span-12 lg:col-span-8 space-y-4'>
+          {/* Create Post Button - Hidden on mobile (shown in toggle bar) */}
+          <div className='hidden md:block'>
+            <button
+              onClick={() => navigate('/projects/create')}
+              className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors mb-4'
+              style={{ backgroundColor: '#0046b0' }}
+            >
+              Create Post
+            </button>
+          </div>
+
+          {filteredProjects.length === 0 ? (
+            <p className='text-gray-500'>
+              No projects found. Try adjusting filters.
+            </p>
+          ) : (
+            filteredProjects.map((project, index) => (
+              <ProjectCard key={index} project={project} />
+            ))
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: Filter Panel - Now comes after project feed in DOM but appears on right for large screens */}
         <div
           className={`col-span-12 ${
             showMobileFilters ? 'block' : 'hidden'
-          } md:block md:col-span-12 lg:col-span-4 space-y-4`}
+          } md:block lg:col-span-4 space-y-4`}
         >
           <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-bold mb-4'>Filter</h3>
@@ -292,30 +316,6 @@ function Projects() {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* LEFT COLUMN: Project Feed */}
-        <div className='col-span-12 lg:col-span-8 space-y-4'>
-          {/* Create Post Button - Hidden on mobile (shown in toggle bar) */}
-          <div className='hidden md:block'>
-            <button
-              onClick={() => navigate('/projects/create')}
-              className='w-full rounded-md px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition-colors mb-4'
-              style={{ backgroundColor: '#0046b0' }}
-            >
-              Create Post
-            </button>
-          </div>
-
-          {filteredProjects.length === 0 ? (
-            <p className='text-gray-500'>
-              No projects found. Try adjusting filters.
-            </p>
-          ) : (
-            filteredProjects.map((project, index) => (
-              <ProjectCard key={index} project={project} />
-            ))
-          )}
         </div>
       </div>
     </div>
