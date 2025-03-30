@@ -153,8 +153,8 @@ function Projects() {
       </div>
 
       <div className='grid grid-cols-12 gap-6'>
-        {/* LEFT COLUMN: Project Feed - Always comes first in DOM */}
-        <div className='col-span-12 lg:col-span-8 space-y-4'>
+        {/* LEFT COLUMN: Project Feed */}
+        <div className='col-span-12 lg:col-span-8 space-y-4 order-2 lg:order-1'>
           {/* Create Post Button - Hidden on mobile (shown in toggle bar) */}
           <div className='hidden md:block'>
             <button
@@ -177,11 +177,11 @@ function Projects() {
           )}
         </div>
 
-        {/* RIGHT COLUMN: Filter Panel - Now comes after project feed in DOM but appears on right for large screens */}
+        {/* RIGHT COLUMN: Filter Panel */}
         <div
-          className={`col-span-12 ${
-            showMobileFilters ? 'block' : 'hidden'
-          } md:block lg:col-span-4 space-y-4`}
+          className={`col-span-12 lg:col-span-4 space-y-4 order-1 lg:order-2 transition-all duration-500 ease-in-out overflow-hidden ${
+            showMobileFilters ? 'max-h-[2000px]' : 'max-h-0 md:max-h-[2000px]'
+          }`}
         >
           <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-bold mb-4'>Filter</h3>

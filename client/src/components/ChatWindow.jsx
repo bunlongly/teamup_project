@@ -14,7 +14,6 @@ import {
 } from 'react-icons/fa';
 
 // Helper function to lighten (or darken) a hex color by a percentage.
-// percent should be a number between -1 (darken) and 1 (lighten)
 const shadeColor = (color, percent) => {
   const f = parseInt(color.slice(1), 16);
   const t = percent < 0 ? 0 : 255;
@@ -288,48 +287,64 @@ const ChatWindow = ({
 
       {/* Chat Content */}
       <div className='relative z-10 flex flex-col h-full'>
-        {/* Header with dynamic gradient background and contrast text color */}
+        {/* Header with dynamic gradient background and responsive text sizing */}
         <div
           className='flex-none border-b p-4 shadow-md'
           style={{ background: headerGradient }}
         >
-          <h2 className='text-xl font-bold' style={{ color: textColor }}>
+          <h2
+            className='text-xl md:text-2xl font-bold'
+            style={{ color: textColor }}
+          >
             {chat.isGroup ? chat.chatName || 'Group Chat' : 'Direct Chat'}
           </h2>
         </div>
 
         {/* Search Conversations */}
-        <div className='p-3' style={{ borderBottom: '2px solid #0046b0' }}>
-          <input
-            type='text'
-            placeholder='Search conversation'
-            className='w-full rounded px-3 py-2 focus:outline-none'
-            style={{
-              border: '1px solid #0046b0',
-              color: '#0046b0'
-            }}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-          />
-          {searchResults.length > 0 && (
-            <div className='flex justify-end mt-2 items-center'>
-              <button
-                onClick={handlePrevSearch}
-                className='mr-2 text-[#0046b0]'
-              >
-                <FaArrowUp />
-              </button>
-              <span className='text-sm text-[#0046b0]'>
-                {currentSearchIndex + 1} / {searchResults.length}
-              </span>
-              <button
-                onClick={handleNextSearch}
-                className='ml-2 text-[#0046b0]'
-              >
-                <FaArrowDown />
-              </button>
-            </div>
-          )}
+        <div
+          className='p-3 bg-white shadow-sm'
+          style={{ borderBottom: '2px solid #0046b0' }}
+        >
+          <div className='relative'>
+            <input
+              type='text'
+              placeholder='Search conversation'
+              className='
+        w-full 
+        rounded-full 
+        px-4 py-2 
+        border-2 
+        border-blue-500 
+        focus:outline-none 
+        focus:border-blue-700 
+        focus:ring-2 
+        focus:ring-blue-300 
+        transition-colors 
+        text-blue-700
+      '
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+            {searchResults.length > 0 && (
+              <div className='flex justify-end mt-2 items-center'>
+                <button
+                  onClick={handlePrevSearch}
+                  className='mr-2 text-blue-700'
+                >
+                  <FaArrowUp />
+                </button>
+                <span className='text-sm text-blue-700'>
+                  {currentSearchIndex + 1} / {searchResults.length}
+                </span>
+                <button
+                  onClick={handleNextSearch}
+                  className='ml-2 text-blue-700'
+                >
+                  <FaArrowDown />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Messages Area */}
