@@ -22,11 +22,11 @@ const uploadImageToCloudinary = async base64Image => {
 };
 
 export const createPost = async (req, res) => {
-  // req.user is set by your authentication middleware
+  console.log('Request body:', req.body);
   const { userId } = req.user;
   console.log('Creating post for user:', userId);
 
-  // Extract fields from req.body
+  // Extract fields from req.body, including fileUrl if provided
   const {
     postType,
     content,
@@ -39,11 +39,22 @@ export const createPost = async (req, res) => {
     startDate,
     endDate,
     role,
-    requirement
+    requirement,
+    fileUrl: fileUrlFromBody  // capture fileUrl from the body, if any
   } = req.body;
 
-  // Handle optional file upload
-  let fileUrl = null;
+  if (!postType) {
+    return errorResponse(
+      res,
+      StatusCodes.BAD_REQUEST,
+      'postType is required'
+    );
+  }
+
+  // Use the fileUrl from the request body by default
+  let fileUrl = fileUrlFromBody || null;
+
+  // If a file is uploaded (via Multer), process it and overwrite fileUrl
   if (req.file) {
     try {
       const base64Image = formatImage(req.file);
@@ -67,8 +78,8 @@ export const createPost = async (req, res) => {
         projectName,
         projectDescription,
         projectType,
-        platform, // New field
-        technicalRole, // New field
+        platform,
+        technicalRole,
         duration,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
@@ -90,6 +101,7 @@ export const createPost = async (req, res) => {
     );
   }
 };
+
 
 export const getAllPosts = async (req, res) => {
   try {

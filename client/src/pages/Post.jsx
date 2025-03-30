@@ -1,12 +1,11 @@
-// CreatePostPage.jsx
-import { useState, useEffect } from 'react';
+// pages/CreatePostPage.jsx
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import { AnimatePresence, motion } from 'framer-motion';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Example dropdown options for projectType
 const projectTypeOptions = [
   'E-commerce',
   'Web Development',
@@ -14,36 +13,29 @@ const projectTypeOptions = [
   'Other'
 ];
 
-// The three post types
 const postTypes = ['STATUS', 'RECRUITMENT', 'PROJECT_SEEKING'];
 
 function CreatePostPage() {
   const navigate = useNavigate();
-
-  // Track which post type is currently selected
+  const formDataRef = useRef(null);
   const [postType, setPostType] = useState('STATUS');
 
-  // Form data (fields differ by post type)
   const [formData, setFormData] = useState({
-    // For STATUS posts
     content: '',
-
-    // For RECRUITMENT / PROJECT_SEEKING posts
     projectName: '',
     projectDescription: '',
-    projectType: '', // e.g., E-commerce
-    platform: '', // e.g., Web Development
-    technicalRole: '', // e.g., Frontend / Backend / Full Stack
+    projectType: '',
+    platform: '',
+    technicalRole: '',
     duration: '',
     startDate: '',
     endDate: '',
     requirement: '',
-
-    // Optional file upload
-    file: null
+    // Instead of storing the file object, we store the file URL after upload
+    fileUrl: ''
   });
 
-  // Switch post type, reset irrelevant fields
+  // When the post type is changed, clear the form
   const handlePostTypeChange = type => {
     setPostType(type);
     setFormData({
@@ -57,23 +49,44 @@ function CreatePostPage() {
       startDate: '',
       endDate: '',
       requirement: '',
-      file: null
+      fileUrl: ''
     });
   };
 
-  // Handle text/file changes
+  // Handle normal input changes
   const handleChange = e => {
-    const { name, value, files } = e.target;
-    if (files) {
-      // For file inputs
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // When the user selects a file, immediately upload it and store the returned URL
+  const handleFileChange = async e => {
+    const { files } = e.target;
+    if (files && files[0]) {
+      try {
+        const formDataForFile = new FormData();
+        formDataForFile.append('file', files[0]);
+
+        const response = await axios.post(
+          'http://localhost:5200/api/upload', // File upload endpoint
+          formDataForFile,
+          { headers: { 'Content-Type': 'multipart/form-data' } }
+        );
+
+        // Save the returned file URL into state
+        setFormData(prev => ({
+          ...prev,
+          fileUrl: response.data.fileUrl
+        }));
+        toast.success('Image uploaded successfully!');
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        toast.error('Failed to upload image');
+      }
     }
   };
 
-  // Automatically compute duration if it's RECRUITMENT / PROJECT_SEEKING
-  // and both startDate & endDate are set
+  // Compute the duration automatically when dates change (if applicable)
   useEffect(() => {
     if (
       (postType === 'RECRUITMENT' || postType === 'PROJECT_SEEKING') &&
@@ -104,37 +117,70 @@ function CreatePostPage() {
     }
   }, [formData.startDate, formData.endDate, postType]);
 
-  // Submit form
+  // Handle form submission
   const handleSubmit = async e => {
     e.preventDefault();
-    const data = new FormData();
+    // Save current form data (including postType) in a ref
+    formDataRef.current = { ...formData, postType };
 
-    // Always append postType
-    data.append('postType', postType);
-
-    // If STATUS, just append content
-    if (postType === 'STATUS') {
-      data.append('content', formData.content);
-    } else {
-      // RECRUITMENT or PROJECT_SEEKING
-      data.append('projectName', formData.projectName);
-      data.append('projectDescription', formData.projectDescription);
-      data.append('projectType', formData.projectType);
-      data.append('platform', formData.platform);
-      data.append('technicalRole', formData.technicalRole);
-      data.append('startDate', formData.startDate);
-      data.append('endDate', formData.endDate);
-      data.append('duration', formData.duration);
-      data.append('requirement', formData.requirement);
+    if (postType === 'RECRUITMENT') {
+      try {
+        const token = localStorage.getItem('token');
+        // Store the form data with fileUrl and postType in localStorage
+        localStorage.setItem(
+          'recruitmentFormData',
+          JSON.stringify({ ...formData, postType })
+        );
+        const response = await axios.post(
+          'http://localhost:5200/api/stripe/create-checkout-session',
+          { postType },
+          {
+            headers: { Authorization: `Bearer ${token}` }
+          }
+        );
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
+      } catch (error) {
+        console.error('Error creating checkout session:', error);
+        toast.error('Failed to create checkout session', {
+          position: 'top-right',
+          autoClose: 5000
+        });
+      }
+      return;
     }
 
-    // If file is selected, append it
-    if (formData.file) {
-      data.append('file', formData.file);
-    }
+    // For non-recruitment posts, create the post directly
+    await createPost(formData, postType);
+  };
 
+  const createPost = async (dataObj, type) => {
     try {
-      // Use token if needed
+      const data = new FormData();
+      data.append('postType', type);
+
+      if (type === 'STATUS') {
+        data.append('content', dataObj.content);
+        // Append fileUrl for STATUS if available
+        if (dataObj.fileUrl) {
+          data.append('fileUrl', dataObj.fileUrl);
+        }
+      } else {
+        data.append('projectName', dataObj.projectName);
+        data.append('projectDescription', dataObj.projectDescription);
+        data.append('projectType', dataObj.projectType);
+        data.append('platform', dataObj.platform);
+        data.append('technicalRole', dataObj.technicalRole);
+        data.append('startDate', dataObj.startDate);
+        data.append('endDate', dataObj.endDate);
+        data.append('duration', dataObj.duration);
+        data.append('requirement', dataObj.requirement);
+        // Append fileUrl for RECRUITMENT
+        if (dataObj.fileUrl) {
+          data.append('fileUrl', dataObj.fileUrl);
+        }
+      }
+
       const token = localStorage.getItem('token');
       const response = await axios.post(
         'http://localhost:5200/api/post/create',
@@ -146,20 +192,17 @@ function CreatePostPage() {
           }
         }
       );
-      console.log('Post created:', response.data);
 
+      console.log('Post created:', response.data);
       toast.success('Post created successfully!', {
         position: 'top-right',
         autoClose: 2000
       });
 
-      // Navigate conditionally after a short delay to show toast
       setTimeout(() => {
-        if (postType === 'STATUS') {
-          // Go to home (adjust route as needed)
+        if (type === 'STATUS') {
           navigate('/');
         } else {
-          // Go to projects page
           navigate('/projects');
         }
       }, 2000);
@@ -172,7 +215,6 @@ function CreatePostPage() {
     }
   };
 
-  // For the stepper animation
   const currentIndex = postTypes.indexOf(postType);
 
   return (
@@ -221,12 +263,8 @@ function CreatePostPage() {
         ))}
       </div>
 
-      {/* Form Card */}
       <div className='bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto'>
-        <form
-          onSubmit={handleSubmit}
-          className='space-y-4 overflow-hidden relative'
-        >
+        <form onSubmit={handleSubmit} className='space-y-4'>
           <AnimatePresence mode='wait'>
             {postType === 'STATUS' && (
               <motion.div
@@ -247,6 +285,57 @@ function CreatePostPage() {
                   rows='4'
                   className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
                 />
+                {/* File upload input for STATUS posts */}
+                <div className='mt-4'>
+                  <label className='block text-sm font-medium text-gray-700 mb-2'>
+                    Upload Image
+                  </label>
+                  <div className='mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg'>
+                    {formData.fileUrl ? (
+                      <img
+                        src={formData.fileUrl}
+                        alt='Preview'
+                        className='max-h-64 rounded-lg'
+                      />
+                    ) : (
+                      <div className='space-y-1 text-center'>
+                        <svg
+                          className='mx-auto h-12 w-12 text-gray-400'
+                          stroke='currentColor'
+                          fill='none'
+                          viewBox='0 0 48 48'
+                          aria-hidden='true'
+                        >
+                          <path
+                            d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28'
+                            strokeWidth='2'
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
+                          />
+                        </svg>
+                        <div className='flex text-sm text-gray-600'>
+                          <label
+                            htmlFor='file-upload-status'
+                            className='relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500'
+                          >
+                            <span>Upload an image</span>
+                            <input
+                              id='file-upload-status'
+                              name='file'
+                              type='file'
+                              onChange={handleFileChange}
+                              className='sr-only'
+                            />
+                          </label>
+                          <p className='pl-1'>or drag and drop</p>
+                        </div>
+                        <p className='text-xs text-gray-500'>
+                          PNG, JPG, GIF up to 10MB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -258,7 +347,7 @@ function CreatePostPage() {
                 exit={{ x: -50, opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                {/* Start & End Dates (same line) */}
+                {/* Start & End Dates */}
                 <div className='flex space-x-4'>
                   <div className='w-1/2'>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -286,7 +375,7 @@ function CreatePostPage() {
                   </div>
                 </div>
 
-                {/* Computed Duration */}
+                {/* Duration */}
                 <div className='mt-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
                     Duration
@@ -314,6 +403,7 @@ function CreatePostPage() {
                     className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
                   />
                 </div>
+
                 <div className='mt-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
                     Project Description
@@ -328,7 +418,6 @@ function CreatePostPage() {
                   />
                 </div>
 
-                {/* Additional fields: projectType, platform, technicalRole */}
                 <div className='flex space-x-4 mt-4'>
                   <div className='w-1/3'>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>
@@ -336,7 +425,6 @@ function CreatePostPage() {
                     </label>
                     <select
                       name='projectType'
-                      id='projectType'
                       value={formData.projectType}
                       onChange={handleChange}
                       className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
@@ -355,16 +443,13 @@ function CreatePostPage() {
                     </label>
                     <select
                       name='platform'
-                      id='platform'
                       value={formData.platform}
                       onChange={handleChange}
                       className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
                     >
                       <option value=''>Select platform</option>
-                      <option value='Web Development'>Web Development</option>
-                      <option value='Mobile Development'>
-                        Mobile Development
-                      </option>
+                      <option value='Web Development'>Web Dev</option>
+                      <option value='Mobile Development'>Mobile Dev</option>
                       <option value='Other'>Other</option>
                     </select>
                   </div>
@@ -374,7 +459,6 @@ function CreatePostPage() {
                     </label>
                     <select
                       name='technicalRole'
-                      id='technicalRole'
                       value={formData.technicalRole}
                       onChange={handleChange}
                       className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
@@ -388,7 +472,6 @@ function CreatePostPage() {
                   </div>
                 </div>
 
-                {/* Requirement */}
                 <div className='mt-4'>
                   <label className='block text-sm font-medium text-gray-700 mb-2'>
                     Requirement
@@ -402,65 +485,64 @@ function CreatePostPage() {
                     className='mt-1 block w-full rounded-lg border border-gray-300 shadow-sm focus:border-blue-600 focus:ring-blue-600 sm:text-sm p-3'
                   />
                 </div>
+
+                {/* File Upload for RECRUITMENT posts only */}
+                {postType === 'RECRUITMENT' && (
+                  <div className='mt-4'>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      Upload File
+                    </label>
+                    <div className='mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg'>
+                      {formData.fileUrl ? (
+                        <img
+                          src={formData.fileUrl}
+                          alt='Preview'
+                          className='max-h-64 rounded-lg'
+                        />
+                      ) : (
+                        <div className='space-y-1 text-center'>
+                          <svg
+                            className='mx-auto h-12 w-12 text-gray-400'
+                            stroke='currentColor'
+                            fill='none'
+                            viewBox='0 0 48 48'
+                            aria-hidden='true'
+                          >
+                            <path
+                              d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28'
+                              strokeWidth='2'
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                            />
+                          </svg>
+                          <div className='flex text-sm text-gray-600'>
+                            <label
+                              htmlFor='file-upload-recruitment'
+                              className='relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500'
+                            >
+                              <span>Upload a file</span>
+                              <input
+                                id='file-upload-recruitment'
+                                name='file'
+                                type='file'
+                                onChange={handleFileChange}
+                                className='sr-only'
+                              />
+                            </label>
+                            <p className='pl-1'>or drag and drop</p>
+                          </div>
+                          <p className='text-xs text-gray-500'>
+                            PNG, JPG, GIF up to 10MB
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* File Upload (hide if PROJECT_SEEKING is not supposed to have it) */}
-          {postType !== 'PROJECT_SEEKING' && (
-            <div className='mt-4'>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Upload File
-              </label>
-              <div className='mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg'>
-                {formData.file ? (
-                  <img
-                    src={URL.createObjectURL(formData.file)}
-                    alt='Preview'
-                    className='max-h-64 rounded-lg'
-                  />
-                ) : (
-                  <div className='space-y-1 text-center'>
-                    <svg
-                      className='mx-auto h-12 w-12 text-gray-400'
-                      stroke='currentColor'
-                      fill='none'
-                      viewBox='0 0 48 48'
-                      aria-hidden='true'
-                    >
-                      <path
-                        d='M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02'
-                        strokeWidth='2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                      />
-                    </svg>
-                    <div className='flex text-sm text-gray-600'>
-                      <label
-                        htmlFor='file-upload'
-                        className='relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500'
-                      >
-                        <span>Upload a file</span>
-                        <input
-                          id='file-upload'
-                          name='file'
-                          type='file'
-                          onChange={handleChange}
-                          className='sr-only'
-                        />
-                      </label>
-                      <p className='pl-1'>or drag and drop</p>
-                    </div>
-                    <p className='text-xs text-gray-500'>
-                      PNG, JPG, GIF up to 10MB
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Submit Button */}
           <div className='flex justify-center mt-6'>
             <button
               type='submit'

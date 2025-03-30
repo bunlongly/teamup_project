@@ -11,7 +11,24 @@ import upload from '../middleware/multerMiddleware.js';
 const router = Router();
 
 // Route to create a project
-router.post('/create', authenticateUser, upload.single('file'), createPost);
+// postRoutes.js
+router.post('/create', authenticateUser, async (req, res, next) => {
+  // Check if the user is a project manager and postType is RECRUITMENT
+  const { role } = req.user;
+  const { postType } = req.body;
+
+  if (role === 'PROJECT_MANAGER' && postType === 'RECRUITMENT') {
+    // 1) Confirm the user has an active subscription or a completed payment
+    //    If not paid, return an error or redirect to payment
+    return res
+      .status(403)
+      .json({ error: 'Payment required for RECRUITMENT post' });
+  }
+
+  // Otherwise, proceed to the createPost controller
+  next();
+}, upload.single('file'), createPost);
+
 
 router.get('/all', getAllPosts);
 
