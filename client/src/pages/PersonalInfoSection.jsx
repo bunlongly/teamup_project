@@ -20,7 +20,7 @@ const PersonalInfoSection = ({
         {isOwner && (
           <button
             onClick={() => setEditMode(!editMode)}
-            className='text-gray-600 hover:text-gray-800 focus:outline-none'
+            className='text-blue-600 hover:text-blue-800 focus:outline-none'
             aria-label={
               editMode ? 'Cancel editing' : 'Edit personal information'
             }

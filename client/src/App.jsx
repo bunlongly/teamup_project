@@ -21,6 +21,7 @@ import MyProjectDetailPage from './pages/MyProjectDetailPage';
 import TaskDetailPage from './pages/TaskDetailPage';
 import ChatPage from './pages/ChatPage';
 
+import RecruitmentSuccessPage from './pages/RecruitmentSuccessPage';
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
@@ -137,6 +138,18 @@ function App() {
                 <ChatPage />
               </ProtectedRoute>
             }
+          />
+          <Route
+            path='/recruitment-success'
+            element={
+              <ProtectedRoute>
+                <RecruitmentSuccessPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/recruitment-cancel'
+            element={<div>Payment Cancelled. Please try again.</div>}
           />
         </Routes>
       </div>

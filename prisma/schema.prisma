@@ -58,6 +58,10 @@ model User {
   chatParticipants ChatParticipant[]
   customizations ChatCustomization[]
   messages         Message[]
+  Subscription     Subscription[]
+
+  comments           Comment[]     
+  likes              Like[]
 
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -140,9 +144,36 @@ model Post {
     
   applications       Application[]
   tasks              Task[] 
+  comments           Comment[]     
+  likes              Like[]
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
+
+model Comment {
+  id          String   @id @default(uuid())
+  content     String
+  postId      String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  post        Post     @relation(fields: [postId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Like {
+  id          String   @id @default(uuid())
+  postId      String
+  userId      String
+  createdAt   DateTime @default(now())
+
+  post        Post     @relation(fields: [postId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+  
+  @@unique([postId, userId])
+}
+
 
 
 enum ConnectionStatus {
@@ -310,4 +341,15 @@ model ChatCustomization {
   user         User     @relation(fields: [userId], references: [id])
 
   @@unique([chatId, userId]) // Each user can have only one customization per chat
+}
+
+
+model Subscription {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  remainingPosts Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id])
 }

@@ -12,6 +12,9 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import applicationRoutes from './routes/applicationRoutes.js';
 import taskRoutes from './routes/tasksRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
+import stripeRoutes from './routes/stripeRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
+import subscriptionRoutes from './routes/subscriptionRoutes.js';
 
 dotenv.config();
 
@@ -46,6 +49,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/application', applicationRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/chats', chatRoutes);
+app.use('/api/stripe', stripeRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/subscription', subscriptionRoutes);
 
 // Error handling middleware
 app.use(errorHandlerMiddleware);
