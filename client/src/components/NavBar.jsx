@@ -202,8 +202,8 @@ function NavBar() {
                       console.log('Input changed:', e.target.value);
                       setSearchTerm(e.target.value);
                     }}
-                    placeholder='Search...'
-                    className='bg-white rounded-md text-base text-gray-900 w-full px-3 py-1.5'
+                    placeholder='Search for users...'
+                    className='bg-white rounded-full border border-gray-200 text-base text-gray-900 w-full px-3 py-1.5 transition-all duration-300 ease-in-out focus:border-[#0046b0] focus:ring-2 focus:ring-[#0046b0]'
                   />
                 </div>
                 <button
@@ -212,7 +212,7 @@ function NavBar() {
                 >
                   <FontAwesomeIcon
                     icon={searchExpanded ? faTimes : faSearch}
-                    className='text-white'
+                    className='text-white text-2xl'
                   />
                 </button>
                 {/* Dropdown for search results */}
