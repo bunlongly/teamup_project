@@ -390,9 +390,9 @@ function ProjectCard({ project }) {
             <div className='mr-4'>
               <strong>Duration:</strong> {project.duration || 'N/A'}
             </div>
-            <div className='mr-4'>
+            {/* <div className='mr-4'>
               <strong>Location:</strong> {project.location || 'N/A'}
-            </div>
+            </div> */}
           </div>
 
           {/* Description */}
