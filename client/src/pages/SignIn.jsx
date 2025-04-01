@@ -12,7 +12,7 @@ import { jwtDecode } from 'jwt-decode';
 function SignInPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: 'test001@gmail.com',
+    email: 'john@gmail.com',
     password: '123456789'
   });
   const [errors, setErrors] = useState({});

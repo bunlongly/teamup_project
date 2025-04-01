@@ -1,5 +1,4 @@
-// ChatPage.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
@@ -12,8 +11,8 @@ import { FaBars, FaInfoCircle, FaTimes } from 'react-icons/fa';
 
 const ChatPage = () => {
   const [selectedChat, setSelectedChat] = useState(null);
-  const [chatBackground, setChatBackground] = useState(''); // default background
-  const [chatColor, setChatColor] = useState('#0046b0'); // default text color
+  const [chatBackground, setChatBackground] = useState(''); 
+  const [chatColor, setChatColor] = useState('#0046b0');
 
   // For mobile overlays
   const [showChatList, setShowChatList] = useState(false);

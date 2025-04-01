@@ -1,5 +1,5 @@
 // ChatList.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import FlipMove from 'react-flip-move';
 import CreateChatModal from './CreateChatModal';
