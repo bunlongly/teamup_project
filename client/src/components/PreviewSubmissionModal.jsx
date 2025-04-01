@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import PropTypes from 'prop-types';
 
 const PreviewSubmissionModal = ({ submissionData, onConfirm, onCancel }) => {
@@ -103,7 +103,7 @@ PreviewSubmissionModal.propTypes = {
   submissionData: PropTypes.shape({
     links: PropTypes.arrayOf(PropTypes.string),
     comment: PropTypes.string,
-    attachment: PropTypes.object, // File object if any
+    attachment: PropTypes.object, 
     reportReason: PropTypes.string,
     timestamp: PropTypes.string
   }).isRequired,

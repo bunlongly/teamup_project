@@ -23,7 +23,7 @@ function ConnectionButton({ profileUserId }) {
           headers: { Authorization: `Bearer ${token}` }
         })
         .then(res => {
-          // The backend returns an object like { connection: { followerId, followingId, status } }
+        
           const connection = res.data.data.connection;
           if (connection) {
             // If the current user is the sender

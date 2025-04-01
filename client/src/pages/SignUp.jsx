@@ -2,20 +2,20 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css'; // Import the CSS for toastify
+import 'react-toastify/dist/ReactToastify.css'; 
 import Khteamup from '../components/Khteamup';
 import Slogan from '../components/Slogan';
 import logo from '../assets/logo.png';
 import PhoneInput from 'react-phone-number-input';
-import 'react-phone-number-input/style.css'; // Import the default styles
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import eye icons for password visibility toggle
+import 'react-phone-number-input/style.css';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function SignUpPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     firstName: 'testing',
     lastName: '123',
-    phoneNumber: '', // Initialize as empty string
+    phoneNumber: '',
     email: 'test123@gmail.com',
     password: '123456789',
     confirmPassword: '123456789',
@@ -23,8 +23,8 @@ function SignUpPage() {
   });
 
   const [errors, setErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
+  const [showPassword, setShowPassword] = useState(false); 
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false); 
 
   // Handle form input changes
   const handleChange = e => {
@@ -63,7 +63,7 @@ function SignUpPage() {
       const errorResponse =
         err.response?.data?.message ||
         'Something went wrong. Please try again.';
-      const validationErrors = err.response?.data?.errors || []; // Assuming your backend returns errors as an array
+      const validationErrors = err.response?.data?.errors || []; 
 
       // Convert array of errors into an object for easier display
       const formattedErrors = {};

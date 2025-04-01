@@ -14,7 +14,7 @@ function Toastify() {
       pauseOnFocusLoss
       draggable
       pauseOnHover
-      theme="light"       // You can change to 'dark', 'colored', etc.
+      theme="light"       
     />
   );
 }

@@ -1,5 +1,4 @@
-// MyProjectTabs.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -234,14 +233,7 @@ function MyProjectTabs({
                 )}
               </div>
             </div>
-            <div className='bg-white rounded-md shadow p-4'>
-              <h2 className='text-xl font-semibold mb-3'>
-                Add New Team Member
-              </h2>
-              <button className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors'>
-                + Add Member
-              </button>
-            </div>
+         
           </div>
           {/* Right Column: Project Overview & Team Status */}
           <div className='lg:col-span-4 space-y-4'>

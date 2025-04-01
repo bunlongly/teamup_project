@@ -1,5 +1,4 @@
-// Profile.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
@@ -383,7 +382,7 @@ function Profile() {
             {personalInfo.firstName} {personalInfo.lastName}
           </h1>
           <p className='text-gray-600'>
-            {personalInfo.username || 'Your username here'}
+            @{personalInfo.username || 'Your username here'}
           </p>
           <p className='text-gray-600'>
             {personalInfo.jobTitle || 'Your job title here'}

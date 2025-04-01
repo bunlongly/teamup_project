@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import{ useState, useEffect } from 'react';
 import axios from 'axios';
 import fallbackAvatar from '../assets/logo.png';
 import PropTypes from 'prop-types';
@@ -107,7 +107,7 @@ function NotificationCard({ notif, onDismiss }) {
   // You can add other types as needed.
 
   // If notification is older than 24 hours, apply a different background color.
-  const isOld = new Date() - new Date(createdAt) > 8 * 60 * 60 * 1000;
+  const isOld = new Date() - new Date(createdAt) > 3 * 60 * 60 * 1000;
   const cardBgClass = isOld ? 'bg-blue-100' : 'bg-white';
 
   return (

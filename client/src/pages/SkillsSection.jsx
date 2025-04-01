@@ -24,45 +24,57 @@ const SkillsSection = ({
   };
 
   return (
-    <div className='skills-section bg-white rounded-lg shadow p-4'>
-      <div className='flex items-center justify-between mb-4'>
-        <h3 className='text-xl font-bold'>Skills</h3>
+    <div className='skills-section bg-white rounded-lg shadow-md p-6'>
+      {/* Header */}
+      <div className='flex items-center justify-between mb-5 border-b pb-3'>
+        <h3 className='text-2xl font-semibold text-gray-800'>Skills</h3>
         {isOwner && (
           <button
             onClick={() => setEditMode(!editMode)}
-            className='text-blue-600 hover:text-blue-800'
+            className='text-blue-600 hover:text-blue-800 transition-colors duration-200'
+            aria-label={editMode ? 'Cancel edit' : 'Edit skills'}
           >
             <FontAwesomeIcon icon={editMode ? faTimes : faPen} size='lg' />
           </button>
         )}
       </div>
-      {skills.map((skill, index) => (
-        <div key={index} className='mb-3 flex items-center'>
-          {editMode ? (
-            <>
-              <input
-                type='text'
-                placeholder='Skill'
-                value={skill}
-                onChange={e => handleSkillChange(index, e.target.value)}
-                className='mt-1 block w-full border border-gray-300 rounded-md p-2'
-              />
-              <button
-                onClick={() => handleDeleteSkill(index)}
-                className='ml-3 text-red-500 hover:text-red-600'
-              >
-                <FontAwesomeIcon icon={faTrash} />
-              </button>
-            </>
-          ) : (
-            <p className='text-gray-800'>Skill: {skill}</p>
-          )}
-        </div>
-      ))}
+
+      {/* Skills Grid */}
+      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4'>
+        {skills.map((skill, index) => (
+          <div
+            key={index}
+            className='flex items-center justify-between p-3 border border-gray-200 rounded'
+          >
+            {editMode ? (
+              <>
+                <input
+                  type='text'
+                  placeholder='Enter skill'
+                  value={skill}
+                  onChange={e => handleSkillChange(index, e.target.value)}
+                  className='w-full mr-3 py-2 px-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500'
+                />
+                <button
+                  onClick={() => handleDeleteSkill(index)}
+                  className='text-red-500 hover:text-red-600 transition-colors duration-200'
+                  aria-label='Delete skill'
+                >
+                  <FontAwesomeIcon icon={faTrash} />
+                </button>
+              </>
+            ) : (
+              <span className='text-gray-700 text-base'>{skill}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Add Skill Button */}
       {editMode && (
         <button
           onClick={handleAddSkill}
-          className='mt-3 inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm rounded shadow hover:bg-blue-700'
+          className='mt-4 inline-flex items-center px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700 transition-colors duration-200'
         >
           + Add Skill
         </button>

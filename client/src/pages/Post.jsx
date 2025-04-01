@@ -9,10 +9,14 @@ import SkipPaymentModal from '../components/SkipPaymentModal'; // for skipping p
 import 'react-toastify/dist/ReactToastify.css';
 
 const projectTypeOptions = [
-  'E-commerce',
-  'Web Development',
+  'AI/Machine Learning',
+  'Web Application',
   'Mobile Development',
-  'Other'
+  'Mobile Application Project',
+  'Hybrid App Development',
+  'AI/ML Research & Development',
+  'Data Analytics & Visualization',
+  'Cloud-Native Applications'
 ];
 
 const postTypes = ['STATUS', 'RECRUITMENT', 'PROJECT_SEEKING'];
@@ -524,6 +528,7 @@ function CreatePostPage() {
                       <option value=''>Select platform</option>
                       <option value='Web Development'>Web Dev</option>
                       <option value='Mobile Development'>Mobile Dev</option>
+                      <option value='Mobile Development'>Cloud Dev</option>
                       <option value='Other'>Other</option>
                     </select>
                   </div>
@@ -540,7 +545,9 @@ function CreatePostPage() {
                       <option value=''>Select role</option>
                       <option value='Frontend'>Frontend</option>
                       <option value='Backend'>Backend</option>
-                      <option value='Full Stack'>Full Stack</option>
+                      <option value='Full Stack'>Full Stack Developer</option>
+                      <option value='Full Stack'>Swift Developer</option>
+                      <option value='Full Stack'>UX/UI Design</option>
                       <option value='Other'>Other</option>
                     </select>
                   </div>

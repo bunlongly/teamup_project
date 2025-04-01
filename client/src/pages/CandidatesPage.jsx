@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import  { useState, useEffect } from 'react';
 import axios from 'axios';
 import fallbackAvatar from '../assets/logo.png';
 import { useNavigate } from 'react-router-dom';

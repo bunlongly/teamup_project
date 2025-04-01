@@ -1,11 +1,10 @@
-// MyProjectDetailPage.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Chart } from 'react-google-charts';
 import MyProjectHeader from '../components/MyProjectHeader';
 import MyProjectTabs from '../components/MyProjectTabs';
-import fallbackLogo from '../assets/logo.png';
+// import fallbackLogo from '../assets/logo.png';
 
 function MyProjectDetailPage() {
   const { id } = useParams(); // project ID from URL

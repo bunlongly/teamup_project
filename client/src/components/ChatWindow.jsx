@@ -487,7 +487,7 @@ ChatWindow.propTypes = {
   socket: PropTypes.object,
   currentUser: PropTypes.object,
   backgroundUrl: PropTypes.string,
-  headerColor: PropTypes.string // New prop for header color
+  headerColor: PropTypes.string 
 };
 
 export default ChatWindow;
